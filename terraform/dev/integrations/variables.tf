@@ -20,6 +20,14 @@ variable "sign_up_lambda_function_name" {
   type = string
 }
 
+variable "sign_in_lambda_invoke_arn" {
+  type = string
+}
+
+variable "sign_in_lambda_function_name" {
+  type = string
+}
+
 variable "api_gw_execution_arn" {
   type = string
 }

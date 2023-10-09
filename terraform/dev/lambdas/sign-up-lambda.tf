@@ -1,10 +1,10 @@
 locals {
-  lambda_name = "${var.env}-${var.feature}-sign-up"
+  sign_up_lambda_name = "${var.env}-${var.feature}-sign-up"
 }
 
 # Create iam role
 resource "aws_iam_role" "sign_up_lambda_exec" {
-  name = local.lambda_name
+  name = local.sign_up_lambda_name
 
   assume_role_policy = <<POLICY
 {
@@ -42,7 +42,7 @@ resource "aws_s3_object" "sign_up_lambda" {
 
 # Create lambda function
 resource "aws_lambda_function" "sign_up_lambda" {
-  function_name = local.lambda_name
+  function_name = local.sign_up_lambda_name
 
   runtime = "nodejs16.x"
   handler = "function.handler"
@@ -57,13 +57,13 @@ resource "aws_lambda_function" "sign_up_lambda" {
 
 # Create log group for lambda
 resource "aws_cloudwatch_log_group" "sign_up_lambda_cloudwatch_log_group" {
-  name = "/aws/lambda/${local.lambda_name}"
+  name = "/aws/lambda/${local.sign_up_lambda_name}"
 
   retention_in_days = 14
 }
 
 # Define the Lambda access policy
-data "aws_iam_policy_document" "lambda_policy" {
+data "aws_iam_policy_document" "sign_up_lambda_policy" {
   statement {
     effect  = "Allow"
 
@@ -87,15 +87,15 @@ data "aws_iam_policy_document" "lambda_policy" {
   }
 }
 
-resource "aws_iam_policy" "policy" {
+resource "aws_iam_policy" "sign_up_policy" {
   name        = "${var.env}-auth-api-lambda-sign-up-endpoint"
   description = "Allow /sign-up to add logs to cloudwatch and access DynamoDB table"
-  policy      = data.aws_iam_policy_document.lambda_policy.json
+  policy      = data.aws_iam_policy_document.sign_up_lambda_policy.json
 }
 
 # Attach policy
 resource "aws_iam_role_policy_attachment" "sign_up_lambda_policy" {
   role       = aws_iam_role.sign_up_lambda_exec.name
-  policy_arn = aws_iam_policy.policy.arn
+  policy_arn = aws_iam_policy.sign_up_policy.arn
 }
 

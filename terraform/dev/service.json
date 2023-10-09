@@ -54,6 +54,14 @@
 
       "global": true
     },
+    {
+      "folderName": "secrets-manager",
+      "description": "Create JWT secret for users JWT tokens",
+
+      "outputName": "secrets_manager",
+
+      "global": true
+    },
 
     {
       "folderName": "api-gateway-stage",
@@ -87,7 +95,10 @@
         "api_gw_execution_arn": "<tf-outputs:api_gw.api_gw_execution_arn>",
 
         "sign_up_lambda_invoke_arn": "<tf-outputs:lambdas.sign_up_lambda_invoke_arn>",
-        "sign_up_lambda_function_name": "<tf-outputs:lambdas.sign_up_lambda_function_name>"
+        "sign_up_lambda_function_name": "<tf-outputs:lambdas.sign_up_lambda_function_name>",
+
+        "sign_in_lambda_invoke_arn": "<tf-outputs:lambdas.sign_in_lambda_invoke_arn>",
+        "sign_in_lambda_function_name": "<tf-outputs:lambdas.sign_in_lambda_function_name>"
       }
     },
     {
