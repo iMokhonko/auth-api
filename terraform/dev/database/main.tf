@@ -23,7 +23,6 @@ module "dynamodb_table" {
 
   name                        = "${var.env}-auth-api-users-table"
   hash_key                    = "login"
-  range_key                   = "created"
   table_class                 = "STANDARD"
   deletion_protection_enabled = true
 
@@ -31,11 +30,7 @@ module "dynamodb_table" {
     {
       name = "login"
       type = "S"
-    },
-    {
-      name = "created"
-      type = "S"
-    },
+    }
   ]
 
   tags = {

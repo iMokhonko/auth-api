@@ -1,8 +1,6 @@
 const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const kms = new AWS.KMS();
-
-// const infrastructure = require('../../infrastructure.json');
+const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
+const kms = new AWS.KMS({ region: 'us-east-1' });
 
 const encryptPassword = async (password) => {
   try {
@@ -11,70 +9,91 @@ const encryptPassword = async (password) => {
       Plaintext: password,  // The plaintext data to encrypt.
     }).promise();
 
-    // The cipher text blob.
-    const cipherTextBlob = data.CiphertextBlob.toString('base64');
-    console.log(cipherTextBlob);
-    
-    return cipherTextBlob;
+    return data.CiphertextBlob.toString('base64');
   } catch (err) {
       console.log(err);
       throw err;
   }
 }
 
-exports.handler = async (event) => {
-  console.log('Event', event);
+const isUserExistWithLogin = async (login = '') => {
+  try {
+    const user = await dynamodb.get({
+      TableName: 'dev-auth-api-users-table',
+      Key: { login: `${login}`.toLocaleLowerCase() }
+    }).promise();
+  
+    return Boolean(user?.Item);
+  } catch(error) {
+    console.error(error)
+    return null;
+  }
+};
 
-  const { httpMethod } = event;
-
-  switch(httpMethod) {
-    case 'GET': {
-      const params = {
-        TableName: 'dev-auth-api-users-table',
-        Item: {
-            login: `kek-------lol-${Date.now()}`,
-            created: Date.now(),
-            password: await encryptPassword('1234')
-        }
-    };
-
-    try {
-        const data = await dynamodb.put(params).promise();
-
-        console.log("Successfully added item:", JSON.stringify(data, null, 2));
-
-        return {
-          statusCode: 200,
-          body: JSON.stringify({
-            message: 'Successfully added item',
-            item: JSON.stringify(data, null, 2)
-          })
-        }
-      } catch (err) {
-          return {
-            statusCode: 200,
-            body: JSON.stringify({
-              message: 'Unable to add item. Error JSON',
-              error: JSON.stringify(err, null, 2)
-            })
-          }
-      }
+const addUserToDB = async ({ login, password }) => {
+  const params = {
+    TableName: 'dev-auth-api-users-table',
+    Item: {
+        login,
+        password: await encryptPassword(password),
+        created: Date.now(),
     }
-    case 'POST': {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: 'POST METHOD INVOKED'
-        })
-      }
+  };
+
+  return await dynamodb.put(params).promise();
+};
+
+const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
+  statusCode,
+
+  ...(body && { body: JSON.stringify(body) }),
+
+  headers: {
+    "Content-Type": "application/json",
+    ...headers
+  }
+});
+
+const isLoginValid = login => /^[a-zA-Z0-9_.]+$/.test(login);
+
+exports.handler = async ({ body = {} } = {}) => {
+  try {
+    const {
+      login = '',
+      password = ''
+    } = JSON.parse(body) ?? {};
+  
+    const normalizedLogin = `${login}`.trim();
+  
+    // validate login
+    if(!normalizedLogin) {
+      return createResponse(400, { errorMessage: `Login required` });
     }
-    default: {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: 'ANOTHER METHOD INVOKED'
-        })
-      }
+
+    if(!isLoginValid(normalizedLogin)) {
+      return createResponse(400, { errorMessage: `Login can contain only [a-z,A-Z,0-9,_,.] characters` });
     }
+  
+    // validate password
+    if(!password) {
+      return createResponse(400, { errorMessage: `Password required` });
+    }
+  
+    // validate that user with such login does not exist
+    const isUserWithThisLoginExist = await isUserExistWithLogin(normalizedLogin);
+    if(isUserWithThisLoginExist) {
+      return createResponse(409, { errorMessage: `User with ${normalizedLogin} already exist` });
+    }
+  
+    await addUserToDB({
+      login: normalizedLogin,
+      password
+    });
+
+    return createResponse(200, { message: `${normalizedLogin} created` });
+  } catch(e) {
+    console.error(e);
+
+    return createResponse(500);
   }
 }

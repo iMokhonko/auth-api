@@ -11,7 +11,7 @@ resource "aws_apigatewayv2_integration" "sign_up_lambda" {
 resource "aws_apigatewayv2_route" "get_sign_up" {
   api_id = var.api_gw_id
 
-  route_key = "GET /sign-up"
+  route_key = "POST /sign-up"
   target    = "integrations/${aws_apigatewayv2_integration.sign_up_lambda.id}"
 }
 
