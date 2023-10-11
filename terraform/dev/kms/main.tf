@@ -22,6 +22,8 @@ provider "aws" {
 resource "aws_kms_key" "kms_key" {
   description             = "${var.env}/auth-users-passwords"
   deletion_window_in_days = 7
+
+  tags = var.tags
 }
 
 resource "aws_kms_key_policy" "kms_policy" {

@@ -33,7 +33,5 @@ module "dynamodb_table" {
     }
   ]
 
-  tags = {
-    Env = var.env
-  }
+  tags = var.tags
 }

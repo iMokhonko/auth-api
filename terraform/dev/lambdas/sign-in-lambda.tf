@@ -1,11 +1,5 @@
 locals {
   sign_in_lambda_name = "${var.env}-${var.feature}-sign-in"
-
-  sign_in_lambda_tags = {
-    Service = "auth-api"
-    Env = var.env
-    Feature = var.feature
-  }
 }
 
 # Create iam role
@@ -27,7 +21,7 @@ resource "aws_iam_role" "sign_in_lambda_exec" {
 }
 POLICY
 
-  tags = local.sign_in_lambda_tags
+  tags = var.tags
 }
 
 # Create lambda function
@@ -37,14 +31,14 @@ resource "aws_lambda_function" "sign_in_lambda" {
   runtime = "nodejs16.x"
   handler = "function.handler"
 
-  s3_bucket = var.s3_bucket_id
+  s3_bucket = var.context.s3.s3_bucket_id
   s3_key    = "${var.env}/${var.feature}/sign-in-lambda.zip"
 
   # source_code_hash = data.archive_file.sign_in_lambda.output_base64sha512
 
   role = aws_iam_role.sign_in_lambda_exec.arn
 
-  tags = local.sign_in_lambda_tags
+  tags = var.tags
 }
 
 # Create log group for lambda
@@ -53,7 +47,7 @@ resource "aws_cloudwatch_log_group" "sign_in_lambda_cloudwatch_log_group" {
 
   retention_in_days = 14
 
-  tags = local.sign_in_lambda_tags
+  tags = var.tags
 }
 
 # Define the Lambda access policy
@@ -65,7 +59,7 @@ data "aws_iam_policy_document" "sign_in_lambda_policy" {
       "dynamodb:GetItem"
     ]
 
-    resources = [var.dynamodb_table_arn]
+    resources = [var.context.database.dynamodb_table_arn]
   }
   
   statement {
@@ -86,7 +80,7 @@ data "aws_iam_policy_document" "sign_in_lambda_policy" {
         "secretsmanager:GetSecretValue"
       ]
 
-      resources = [var.secret_arn]
+      resources = [var.context.secrets_manager.secret_arn]
   }
 }
 
@@ -95,7 +89,7 @@ resource "aws_iam_policy" "sign_in_policy" {
   description = "Allow /sign-in to add logs to cloudwatch and access DynamoDB table"
   policy      = data.aws_iam_policy_document.sign_in_lambda_policy.json
   
-  tags = local.sign_in_lambda_tags
+  tags = var.tags
 }
 
 # Attach policy

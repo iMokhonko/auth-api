@@ -8,26 +8,10 @@ variable "feature" {
   default = "master"
 }
 
-variable "api_gw_id" {
-  type = string
+variable "context" {
+  type = any
 }
 
-variable "sign_up_lambda_invoke_arn" {
-  type = string
-}
-
-variable "sign_up_lambda_function_name" {
-  type = string
-}
-
-variable "sign_in_lambda_invoke_arn" {
-  type = string
-}
-
-variable "sign_in_lambda_function_name" {
-  type = string
-}
-
-variable "api_gw_execution_arn" {
-  type = string
+variable "tags" {
+  type = any
 }

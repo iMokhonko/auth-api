@@ -19,11 +19,9 @@ provider "aws" {
 }
 
 resource "aws_ssm_parameter" "config" {
-  name  = "/${var.env}/${var.dns_service_name}"
+  name  = "/${var.env}/auth-api"
   type  = "String"
-  value = var.dns_address
+  value = var.context.dns.dns_address
 
-  tags = {
-    Env = var.env
-  }
+  tags = var.tags
 }

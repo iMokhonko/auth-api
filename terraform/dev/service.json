@@ -39,10 +39,6 @@
       "description": "Create record in aws parameter store and save DNS address of deployed service",
 
       "outputName": "config",
-      
-      "variables": {
-        "dns_address": "<tf-outputs:dns.dns_address>"
-      },
 
       "global": true
     },
@@ -67,54 +63,25 @@
       "folderName": "api-gateway-stage",
       "description": "Create API Gateway Stage",
 
-      "outputName": "api_gw_stage",
-
-      "variables": {
-        "api_gateway_id": "<tf-outputs:api_gw.api_gw_id>"
-      }
+      "outputName": "api_gw_stage"
     },
     {
       "folderName": "lambdas",
       "description": "Create lambda functions",
 
-      "outputName": "lambdas",
-
-      "variables": {
-        "s3_bucket_id": "<tf-outputs:s3.s3_bucket_id>",
-        "dynamodb_table_arn": "<tf-outputs:database.dynamodb_table_arn>",
-        "secret_arn": "<tf-outputs:secrets_manager.secret_arn>"
-      }
+      "outputName": "lambdas"
     },
     {
       "folderName": "integrations",
       "description": "Create integration between Api Gateway and lambdas",
 
-      "outputName": "integration",
-
-      "variables": {
-        "api_gw_id": "<tf-outputs:api_gw.api_gw_id>",
-        "api_gw_execution_arn": "<tf-outputs:api_gw.api_gw_execution_arn>",
-
-        "sign_up_lambda_invoke_arn": "<tf-outputs:lambdas.sign_up_lambda_invoke_arn>",
-        "sign_up_lambda_function_name": "<tf-outputs:lambdas.sign_up_lambda_function_name>",
-
-        "sign_in_lambda_invoke_arn": "<tf-outputs:lambdas.sign_in_lambda_invoke_arn>",
-        "sign_in_lambda_function_name": "<tf-outputs:lambdas.sign_in_lambda_function_name>"
-      }
+      "outputName": "integration"
     },
     {
       "folderName": "cloudfront",
       "description": "Create distribution for API for current env & feature",
 
-      "outputName": "distribution",
-      
-      "variables": {
-        "route53_zone_id": "<tf-outputs:dns.route53_zone_id>",
-        "acm_master_certificate_arn": "<tf-outputs:dns.acm_master_certificate_arn>",
-        "acm_features_certificate_arn": "<tf-outputs:dns.acm_features_certificate_arn>",
-        
-        "api_endpoint_url": "<tf-outputs:api_gw.api_endpoint_url>"
-      }
+      "outputName": "distribution"
     }
   ],
 

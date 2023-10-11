@@ -19,20 +19,20 @@ provider "aws" {
 }
 
 locals {
-  api_endpoint_url = replace(replace(replace(var.api_endpoint_url, "https://", ""), "http://", ""), "wss://", "")
+  api_endpoint_url = replace(replace(replace(var.context.api_gw.api_endpoint_url, "https://", ""), "http://", ""), "wss://", "")
 }
 
 module "distribution" {
   source = "../../../terraform-modules/api_cloudfront_distribution"
 
   feature = var.feature
-  dns_service_name = var.dns_service_name
+  dns_service_name = "auth-api"
   env = var.env
-  hosted_zone = var.hosted_zone
+  hosted_zone = "imokhonko.com"
 
-  route53_zone_id = var.route53_zone_id
-  acm_master_certificate_arn = var.acm_master_certificate_arn
-  acm_features_certificate_arn = var.acm_features_certificate_arn
+  route53_zone_id = var.context.dns.route53_zone_id
+  acm_master_certificate_arn = var.context.dns.acm_master_certificate_arn
+  acm_features_certificate_arn = var.context.dns.acm_features_certificate_arn
 
   api_endpoint_url = local.api_endpoint_url
 }

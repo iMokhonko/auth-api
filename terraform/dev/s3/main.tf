@@ -22,6 +22,8 @@ provider "aws" {
 resource "aws_s3_bucket" "lambdas_bucket" {
   bucket_prefix = "${var.env}.auth-api-lambdas-"
   force_destroy = true
+
+  tags = var.tags
 }
 
 # Create policy for access control for lambda code bucket

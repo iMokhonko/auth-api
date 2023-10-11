@@ -8,6 +8,10 @@ variable "feature" {
   default = "master"
 }
 
-variable "api_gateway_id" {
-  type = string
+variable "context" {
+  type = any
+}
+
+variable "tags" {
+  type = any
 }

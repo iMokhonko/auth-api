@@ -8,14 +8,10 @@ variable "feature" {
   default = "master"
 }
 
-variable "s3_bucket_id" {
-  type = string
+variable "context" {
+  type = any
 }
 
-variable "dynamodb_table_arn" {
-  type = string
-}
-
-variable "secret_arn" {
-  type = string
+variable "tags" {
+  type = any
 }
