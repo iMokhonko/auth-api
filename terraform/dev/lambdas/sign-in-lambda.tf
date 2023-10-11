@@ -1,5 +1,5 @@
 locals {
-  sign_in_lambda_name = "${var.env}-${var.feature}-sign-in"
+  sign_in_lambda_name = "${var.env}${var.feature}-sign-in"
 }
 
 # Create iam role
@@ -23,22 +23,22 @@ POLICY
 }
 
 # create archive from file
-data "archive_file" "sign_in_lambda" {
-  type = "zip"
+# data "archive_file" "sign_in_lambda" {
+#   type = "zip"
 
-  source_dir  = "../../../functions/sign-in"
-  output_path = "../../../functions/sign-in/__bundle__.zip"
-}
+#   source_dir  = "../../../functions/sign-in"
+#   output_path = "../../../functions/sign-in/__bundle__.zip"
+# }
 
-# Upload lambda to s3 bucket
-resource "aws_s3_object" "sign_in_lambda" {
-  bucket = var.s3_bucket_id
+# # Upload lambda to s3 bucket
+# resource "aws_s3_object" "sign_in_lambda" {
+#   bucket = var.s3_bucket_id
 
-  key    = "${var.env}/${var.feature}/sign-in-lambda.zip"
-  source = data.archive_file.sign_in_lambda.output_path
+#   key    = "${var.env}/${var.feature}/sign-in-lambda.zip"
+#   source = data.archive_file.sign_in_lambda.output_path
 
-  etag = filemd5(data.archive_file.sign_in_lambda.output_path)
-}
+#   etag = filemd5(data.archive_file.sign_in_lambda.output_path)
+# }
 
 # Create lambda function
 resource "aws_lambda_function" "sign_in_lambda" {
@@ -48,9 +48,9 @@ resource "aws_lambda_function" "sign_in_lambda" {
   handler = "function.handler"
 
   s3_bucket = var.s3_bucket_id
-  s3_key    = aws_s3_object.sign_in_lambda.key
+  s3_key    = "${var.env}/${var.feature}/sign-in-lambda.zip"
 
-  source_code_hash = data.archive_file.sign_in_lambda.output_base64sha512
+  # source_code_hash = data.archive_file.sign_in_lambda.output_base64sha512
 
   role = aws_iam_role.sign_in_lambda_exec.arn
 }
@@ -83,6 +83,16 @@ data "aws_iam_policy_document" "sign_in_lambda_policy" {
     ]
 
     resources = ["arn:aws:logs:*:*:*"]
+  }
+
+  statement {
+      effect  = "Allow"
+
+      actions = [
+        "secretsmanager:GetSecretValue"
+      ]
+
+      resources = [var.secret_arn]
   }
 }
 

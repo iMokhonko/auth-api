@@ -1,3 +1,7 @@
-output "secretsmanager_secret_id" {
-  value = aws_secretsmanager_secret_version.jwt_secret.id
+output "secret_name" {
+  value = "${var.env}/jwt-secret"
+}
+
+output "secret_arn" {
+  value = aws_secretsmanager_secret.jwt_secret.arn
 }

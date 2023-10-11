@@ -10,7 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "aws-sdk": "^2.1469.0",
+    "@aws-sdk/client-dynamodb": "^3.427.0",
+    "@aws-sdk/client-kms": "^3.427.0",
+    "@aws-sdk/client-secrets-manager": "^3.427.0",
     "jsonwebtoken": "^9.0.2"
   }
 }

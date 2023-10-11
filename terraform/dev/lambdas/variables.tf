@@ -15,3 +15,7 @@ variable "s3_bucket_id" {
 variable "dynamodb_table_arn" {
   type = string
 }
+
+variable "secret_arn" {
+  type = string
+}

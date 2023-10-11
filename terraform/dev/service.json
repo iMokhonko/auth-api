@@ -81,7 +81,8 @@
 
       "variables": {
         "s3_bucket_id": "<tf-outputs:s3.s3_bucket_id>",
-        "dynamodb_table_arn": "<tf-outputs:database.dynamodb_table_arn>"
+        "dynamodb_table_arn": "<tf-outputs:database.dynamodb_table_arn>",
+        "secret_arn": "<tf-outputs:secrets_manager.secret_arn>"
       }
     },
     {
@@ -115,5 +116,21 @@
         "api_endpoint_url": "<tf-outputs:api_gw.api_endpoint_url>"
       }
     }
+  ],
+
+  "deployChain": [
+    "find ./functions -mindepth 1 -maxdepth 1 -type d -exec cp infrastructure.json {} \\;",
+    "find ./functions -mindepth 1 -maxdepth 1 -type d -exec cp env.json {} \\;",
+
+    "cd functions/sign-in/ && zip -r __bundle__.zip *",
+    "cd functions/sign-up/ && zip -r __bundle__.zip *",
+
+    "aws s3 cp functions/sign-up/__bundle__.zip s3://<tf-outputs:s3.s3_bucket_id>/dev/master/sign-up-lambda.zip --profile default",
+    "aws s3 cp functions/sign-in/__bundle__.zip s3://<tf-outputs:s3.s3_bucket_id>/dev/master/sign-in-lambda.zip --profile default",
+
+    "rm functions/sign-up/__bundle__.zip && rm functions/sign-in/__bundle__.zip",
+
+    "aws lambda update-function-code --function-name <tf-outputs:lambdas.sign_up_lambda_function_name> --s3-bucket <tf-outputs:s3.s3_bucket_id> --s3-key dev/master/sign-up-lambda.zip",
+    "aws lambda update-function-code --function-name <tf-outputs:lambdas.sign_in_lambda_function_name> --s3-bucket <tf-outputs:s3.s3_bucket_id> --s3-key dev/master/sign-in-lambda.zip"
   ]
 }

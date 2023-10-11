@@ -1,30 +1,47 @@
-const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
-const kms = new AWS.KMS({ region: 'us-east-1' });
-const secretsManager = new AWS.SecretsManager({ region: 'us-east-1'});
+// DynamoDB
+const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
+const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
+
+// KMS
+const { KMSClient, DecryptCommand } = require("@aws-sdk/client-kms");
+const kmsClient = new KMSClient({ region: 'us-east-1' });
+
+// Secrets Manager
+const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
+const secretsManagerClient = new SecretsManagerClient({ region: 'us-east-1'});
 
 const jwt = require('jsonwebtoken');
 
-const decryptPassword = async (password) => {
-  const decrypted = await kms.decrypt({
-    KeyId: 'af536286-f6c0-460c-a365-43d66834f710',
-    CiphertextBlob: new Buffer.from(password, 'base64')
-  }).promise();
+const infrastructure = require('infrastructure.json');
 
-  return decrypted.Plaintext.toString();
+const decryptPassword = async (password) => {
+  const decrypted = await kmsClient.send(new DecryptCommand({
+    KeyId: infrastructure.kms.kms_key_id,
+    CiphertextBlob: Buffer.from(password, 'base64')
+  }));
+
+  return Buffer.from(decrypted.Plaintext).toString();
 }
 
-const getJwtTokenSecret = async (secretId = 'dev/jwt-secret') => {
-  const data = await secretsManager.getSecretValue({ SecretId: secretId }).promise();
+const getJwtTokenSecret = async () => {
+  const data = await secretsManagerClient.send(
+    new GetSecretValueCommand({ 
+      SecretId: infrastructure.secrets_manager.secret_name
+    })
+  );
 
   return data?.SecretString ?? null;
 };
 
 const getUserByLogin = async (login = '') => {
-  const user = await dynamodb.get({
-    TableName: 'dev-auth-api-users-table',
-    Key: { login: `${login}`.toLocaleLowerCase() }
-  }).promise();
+  const user = await dynamoDbClient.send(new GetItemCommand({
+    TableName: infrastructure.database.dynamo_db_table_name,
+    Key: { 
+      login: { 
+        S: `${login}`.toLocaleLowerCase() 
+      } 
+    }
+  }));
 
   return user?.Item ?? null;
 };
@@ -67,7 +84,7 @@ exports.handler = async ({ body = {} } = {}) => {
     }
 
     // check password
-    const decryptedPassword = await decryptPassword(user.password);
+    const decryptedPassword = await decryptPassword(user.password.S);
     if(decryptedPassword !== password) {
       return createResponse(400, { errorMessage: `Invalid login or password` });
     }
