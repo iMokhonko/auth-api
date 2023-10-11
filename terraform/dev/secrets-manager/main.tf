@@ -40,7 +40,6 @@ resource "aws_secretsmanager_secret_version" "jwt_secret" {
 
 data "aws_iam_policy_document" "jwt_secret_policy" {
   statement {
-    sid    = "EnableAnotherAWSAccountToReadTheSecret"
     effect = "Allow"
 
     principals {
@@ -49,7 +48,7 @@ data "aws_iam_policy_document" "jwt_secret_policy" {
     }
 
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = ["*"]
+    resources = [aws_secretsmanager_secret.jwt_secret.arn]
   }
 }
 

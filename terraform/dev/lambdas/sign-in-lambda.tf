@@ -1,5 +1,11 @@
 locals {
-  sign_in_lambda_name = "${var.env}${var.feature}-sign-in"
+  sign_in_lambda_name = "${var.env}-${var.feature}-sign-in"
+
+  sign_in_lambda_tags = {
+    Service = "auth-api"
+    Env = var.env
+    Feature = var.feature
+  }
 }
 
 # Create iam role
@@ -20,25 +26,9 @@ resource "aws_iam_role" "sign_in_lambda_exec" {
   ]
 }
 POLICY
+
+  tags = local.sign_in_lambda_tags
 }
-
-# create archive from file
-# data "archive_file" "sign_in_lambda" {
-#   type = "zip"
-
-#   source_dir  = "../../../functions/sign-in"
-#   output_path = "../../../functions/sign-in/__bundle__.zip"
-# }
-
-# # Upload lambda to s3 bucket
-# resource "aws_s3_object" "sign_in_lambda" {
-#   bucket = var.s3_bucket_id
-
-#   key    = "${var.env}/${var.feature}/sign-in-lambda.zip"
-#   source = data.archive_file.sign_in_lambda.output_path
-
-#   etag = filemd5(data.archive_file.sign_in_lambda.output_path)
-# }
 
 # Create lambda function
 resource "aws_lambda_function" "sign_in_lambda" {
@@ -53,13 +43,17 @@ resource "aws_lambda_function" "sign_in_lambda" {
   # source_code_hash = data.archive_file.sign_in_lambda.output_base64sha512
 
   role = aws_iam_role.sign_in_lambda_exec.arn
+
+  tags = local.sign_in_lambda_tags
 }
 
 # Create log group for lambda
 resource "aws_cloudwatch_log_group" "sign_in_lambda_cloudwatch_log_group" {
-  name = "/aws/lambda/${local.sign_in_lambda_name}"
+  name = "/aws/lambda/auth-api/${local.sign_in_lambda_name}"
 
   retention_in_days = 14
+
+  tags = local.sign_in_lambda_tags
 }
 
 # Define the Lambda access policy
@@ -100,6 +94,8 @@ resource "aws_iam_policy" "sign_in_policy" {
   name        = "${var.env}-auth-api-lambda-sign-in-endpoint"
   description = "Allow /sign-in to add logs to cloudwatch and access DynamoDB table"
   policy      = data.aws_iam_policy_document.sign_in_lambda_policy.json
+  
+  tags = local.sign_in_lambda_tags
 }
 
 # Attach policy
