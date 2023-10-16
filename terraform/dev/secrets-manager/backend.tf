@@ -8,7 +8,7 @@ terraform {
   
   backend "s3" {
     bucket = "tf-state-backend-imokhonko"
-    key    = "auth-api/dev/integrations.tfstate"
+    key    = "auth-api/dev/secrets-manager.tfstate"
     region = "us-east-1"
   }
 }
@@ -17,3 +17,4 @@ provider "aws" {
   region = "us-east-1"
   profile = "default"
 }
+      

@@ -12,6 +12,10 @@ variable "context" {
   type = any
 }
 
+variable "config" {
+  type = any
+}
+
 variable "tags" {
   type = any
 }

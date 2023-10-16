@@ -8,7 +8,7 @@ terraform {
   
   backend "s3" {
     bucket = "tf-state-backend-imokhonko"
-    key    = "auth-api/dev/api-gw.tfstate"
+    key    = "auth-api/dev/cloudfront_distribution.tfstate"
     region = "us-east-1"
   }
 }
@@ -17,11 +17,4 @@ provider "aws" {
   region = "us-east-1"
   profile = "default"
 }
-
-# Create api gateway
-resource "aws_apigatewayv2_api" "api_gw" {
-  name = "${var.env}/${var.feature}/auth"
-  protocol_type = "HTTP"
-
-  tags = var.tags
-}
+      

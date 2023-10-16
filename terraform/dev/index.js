@@ -60,6 +60,17 @@ module.exports = ({
     subdomain: 'auth-api', // service subdomain
   },
 
+  aws: {
+    region: 'us-east-1', // aws region
+    profile: 'default', // aws credentials profile in .aws/credentials file
+  },
+
+  terraformBackend: {
+    serviceName: 'auth-api', // backend service name
+    bucket: 'tf-state-backend-imokhonko', // aws bucket name where tfstate files will be stored
+    region: 'us-east-1' // bucket region in aws
+  },
+
   terraformResources: [
     // Create DynamoDB table for users
     {
@@ -103,7 +114,7 @@ module.exports = ({
 
     // Create API gateway for this service
     {
-      folderName: "api-gateway",
+      folderName: "api-gw",
       description: "Create API Gateway",
 
       outputName: "api_gw",
@@ -111,7 +122,7 @@ module.exports = ({
       global: true
     },
 
-    // create secret for JWT tokens
+    // Create secret for JWT tokens
     {
       folderName: "secrets-manager",
       description: "Create JWT secret for users JWT tokens",
@@ -121,11 +132,9 @@ module.exports = ({
       global: true
     },
 
-    // non global terraform resources below
-
     // Create API Gateway stage to deploy api
     {
-      folderName: "api-gateway-stage",
+      folderName: "api-gw-stage",
       description: "Create API Gateway Stage",
 
       outputName: "api_gw_stage"
@@ -149,7 +158,7 @@ module.exports = ({
 
     // Create cloudfront distribution for API Gateway and use domain name as alias for this distribution
     {
-      folderName: "cloudfront",
+      folderName: "cloudfront_distribution",
       description: "Create distribution for API for current env & feature",
 
       outputName: "distribution"
@@ -158,8 +167,6 @@ module.exports = ({
   
   deploy: async ({ env, feature, infrastructure, AWS, config }) => {
     const lambdasDirPathes = getDirectories('/functions');
-
-    // console.log('infrastructure', infrastructure);
 
     await Promise.all([
       // copy env.json to lambda folder

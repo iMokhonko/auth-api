@@ -34,8 +34,6 @@ resource "aws_lambda_function" "sign_in_lambda" {
   s3_bucket = var.context.s3.s3_bucket_id
   s3_key    = "${var.env}/${var.feature}/sign-in-lambda.zip"
 
-  # source_code_hash = data.archive_file.sign_in_lambda.output_base64sha512
-
   role = aws_iam_role.sign_in_lambda_exec.arn
 
   tags = var.tags

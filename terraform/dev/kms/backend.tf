@@ -8,7 +8,7 @@ terraform {
   
   backend "s3" {
     bucket = "tf-state-backend-imokhonko"
-    key    = "auth-api/dev/api-gw-stage.tfstate"
+    key    = "auth-api/dev/kms.tfstate"
     region = "us-east-1"
   }
 }
@@ -17,13 +17,4 @@ provider "aws" {
   region = "us-east-1"
   profile = "default"
 }
-
-# Create stage
-resource "aws_apigatewayv2_stage" "api_stage" {
-  api_id = var.context.api_gw.api_gw_id
-
-  name = var.feature
-  auto_deploy = true
-
-  tags = var.tags
-}
+      
