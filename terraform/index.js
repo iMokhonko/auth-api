@@ -1,3 +1,4 @@
+const fsPromises = require('fs').promises;
 const fs = require('fs');
 const path = require('path');
 
@@ -37,7 +38,7 @@ const updateLambdaFunctionCode = async ({ lambda, bucket, key, lambdaName }) => 
       S3Bucket: bucket, 
       S3Key: key  //replace with your .zip file in S3
     };
-  
+    
     await lambda.updateFunctionCode(params).promise();
 
     console.log(`${lambdaName} code update!`);
@@ -72,21 +73,13 @@ module.exports = ({
   },
 
   terraformResources: [
-    // Create DynamoDB table for users
-    {
-      folderName: "database",
-      outputName: "database",
-
-      global: true
-    },
-
     // Create KMS key for encrypting users passwords
-    {
-      folderName: "kms",
-      outputName: "kms",
+    // {
+    //   folderName: "kms",
+    //   outputName: "kms",
 
-      global: true
-    },
+    //   global: true
+    // },
 
     // Create S3 bucket for uploading lambdas code (as zip archive)
     {
@@ -112,29 +105,33 @@ module.exports = ({
       global: true
     },
 
-    // Create API gateway for this service
+    // Create secret for JWT tokens
+    // {
+    //   folderName: "secrets-manager",
+    //   description: "Create JWT secret for users JWT tokens",
+
+    //   outputName: "secrets_manager",
+
+    //   global: true
+    // },
+
+    // Create DynamoDB table for users
     {
-      folderName: "api-gw",
-      description: "Create API Gateway",
-
-      outputName: "api_gw",
-
-      global: true
+      folderName: "database",
+      outputName: "database",
     },
 
-    // Create secret for JWT tokens
+    // Create API gateway for this service
     {
-      folderName: "secrets-manager",
-      description: "Create JWT secret for users JWT tokens",
+      folderName: "api-gateway",
+      description: "Create API Gateway",
 
-      outputName: "secrets_manager",
-
-      global: true
+      outputName: "api_gw"
     },
 
     // Create API Gateway stage to deploy api
     {
-      folderName: "api-gw-stage",
+      folderName: "api-gateway-stage",
       description: "Create API Gateway Stage",
 
       outputName: "api_gw_stage"
@@ -158,11 +155,11 @@ module.exports = ({
 
     // Create cloudfront distribution for API Gateway and use domain name as alias for this distribution
     {
-      folderName: "cloudfront_distribution",
+      folderName: "cloudfront-distribution",
       description: "Create distribution for API for current env & feature",
 
       outputName: "distribution"
-    }
+    },
   ],
   
   deploy: async ({ env, feature, infrastructure, AWS, config }) => {
@@ -170,15 +167,15 @@ module.exports = ({
 
     await Promise.all([
       // copy env.json to lambda folder
-      ...lambdasDirPathes.map(folderPath => copyFileToFilder('env.json', `${folderPath}/env.json`)),
+      ...lambdasDirPathes.map(folderPath => copyFileToFilder('env.cligenerated.json', `${folderPath}/env.cligenerated.json`)),
 
       // copy infrastructure.json to lambdas folder
-      ...lambdasDirPathes.map(folderPath => copyFileToFilder('infrastructure.json', `${folderPath}/infrastructure.json`))
+      ...lambdasDirPathes.map(folderPath => copyFileToFilder('infrastructure.cligenerated.json', `${folderPath}/infrastructure.cligenerated.json`))
     ]);
 
     // archive lambda functions folders
     const archives = await Promise.all(
-      lambdasDirPathes.map(folderPath => archiveFolder(folderPath, `${folderPath}/__bundle__.zip`))
+      lambdasDirPathes.map(folderPath => archiveFolder(folderPath, `${folderPath}/__bundle__.cligenerated.zip`))
     );
 
     const s3 = new AWS.S3();
@@ -207,11 +204,14 @@ module.exports = ({
 
         return updateLambdaFunctionCode({ 
           lambda,
-          lambdaName: `${env}-${feature}-${name}`,
+          lambdaName: `${env}-${feature}-${config.subdomain}-${name}`,
           bucket: infrastructure.s3.s3_bucket_id, 
           key: `${env}/${feature}/${name}.zip`, 
         });
-      })
+      }),
+
+      // remove all zip files
+      ...archives.map(filePath => fsPromises.unlink(filePath))
     ]);
   } 
 

@@ -1,5 +1,5 @@
 resource "aws_ssm_parameter" "config" {
-  name  = "/${var.env}/auth-api"
+  name  = "/${var.env}/${var.config.subdomain}"
   type  = "String"
   value = var.context.dns.dns_address
 

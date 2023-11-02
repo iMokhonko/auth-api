@@ -1,8 +1,12 @@
 const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
-const kms = new AWS.KMS({ region: 'us-east-1' });
+// const kms = new AWS.KMS({ region: 'us-east-1' });
+
+const infrastructure = require('infrastructure.cligenerated.json');
 
 const encryptPassword = async (password) => {
+  return password;
+
   try {
     const data = await kms.encrypt({
       KeyId: 'af536286-f6c0-460c-a365-43d66834f710',  // The ID of the AWS KMS key you want to use.
@@ -19,7 +23,7 @@ const encryptPassword = async (password) => {
 const isUserExistWithLogin = async (login = '') => {
   try {
     const user = await dynamodb.get({
-      TableName: 'dev-auth-api-users-table',
+      TableName: infrastructure.database.dynamo_db_table_name,
       Key: { login: `${login}`.toLocaleLowerCase() }
     }).promise();
   
@@ -32,7 +36,7 @@ const isUserExistWithLogin = async (login = '') => {
 
 const addUserToDB = async ({ login, password }) => {
   const params = {
-    TableName: 'dev-auth-api-users-table',
+    TableName: infrastructure.database.dynamo_db_table_name,
     Item: {
         login,
         password: await encryptPassword(password),
@@ -82,7 +86,9 @@ exports.handler = async ({ body = {} } = {}) => {
     // validate that user with such login does not exist
     const isUserWithThisLoginExist = await isUserExistWithLogin(normalizedLogin);
     if(isUserWithThisLoginExist) {
-      return createResponse(409, { errorMessage: `User with ${normalizedLogin} already exist` });
+      return createResponse(409, { 
+        errorMessage: `User with ${normalizedLogin} already exist` 
+      });
     }
   
     await addUserToDB({

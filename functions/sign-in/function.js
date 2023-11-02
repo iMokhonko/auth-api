@@ -12,9 +12,11 @@ const secretsManagerClient = new SecretsManagerClient({ region: 'us-east-1'});
 
 const jwt = require('jsonwebtoken');
 
-const infrastructure = require('infrastructure.json');
+const infrastructure = require('infrastructure.cligenerated.json');
 
 const decryptPassword = async (password) => {
+  return password;
+  
   const decrypted = await kmsClient.send(new DecryptCommand({
     KeyId: infrastructure.kms.kms_key_id,
     CiphertextBlob: Buffer.from(password, 'base64')
@@ -24,6 +26,8 @@ const decryptPassword = async (password) => {
 }
 
 const getJwtTokenSecret = async () => {
+  return 'chinazes';
+  
   const data = await secretsManagerClient.send(
     new GetSecretValueCommand({ 
       SecretId: infrastructure.secrets_manager.secret_name
@@ -52,12 +56,13 @@ const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => (
   ...(body && { body: JSON.stringify(body) }),
 
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
     ...headers
   }
 });
 
 exports.handler = async ({ body = {} } = {}) => {
+  console.log('here start')
   try {
     const {
       login = '',
@@ -91,9 +96,30 @@ exports.handler = async ({ body = {} } = {}) => {
 
     const jwtSecret = await getJwtTokenSecret();
 
+    // prod env does not appear in url
+    const env = infrastructure.__meta.config.env === 'prod' ? '' : infrastructure.__meta.config.env;
+
+    const domain = env 
+      ? `.${env}.${infrastructure.__meta.config.hostedZone}`
+      : `.${infrastructure.__meta.config.hostedZone}`
+
     return createResponse(200, {
-      token: jwt.sign({ login: user.login }, jwtSecret, { expiresIn: '30s' }),
-      refreshToken: jwt.sign({ login: user.login }, jwtSecret, { expiresIn: '2m' })
+      message: 'Successfuly logged in',
+      token: {
+        value: jwt.sign({ login: user.login.S }, jwtSecret, { expiresIn: '30s' }),
+        maxAge: 30,
+        sameSite: 'lax',
+        secure: true,
+        domain
+      },
+      refreshToken: {
+        value: jwt.sign({ login: user.login.S }, jwtSecret, { expiresIn: '2m' }),
+        maxAge: 60 * 2,
+        path: '/refresh',
+        sameSite: 'lax',
+        secure: true,
+        domain
+      }
     });
   } catch(e) {
     console.error(e);

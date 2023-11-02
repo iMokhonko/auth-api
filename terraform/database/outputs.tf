@@ -3,5 +3,5 @@ output "dynamodb_table_arn" {
 }
 
 output "dynamo_db_table_name" {
-  value = "${var.env}-auth-api-users-table"
+  value = "${var.env}-${var.feature}-${var.config.subdomain}-users-table"
 }
