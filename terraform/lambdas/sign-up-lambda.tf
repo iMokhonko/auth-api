@@ -40,7 +40,7 @@ resource "aws_lambda_function" "sign_up_lambda" {
 
 # Create log group for lambda
 resource "aws_cloudwatch_log_group" "sign_up_lambda_cloudwatch_log_group" {
-  name = "/aws/lambda/${var.config.subdomain}/${local.sign_up_lambda_name}"
+  name = "/aws/lambda/${local.sign_up_lambda_name}"
 
   retention_in_days = 14
 
@@ -64,6 +64,7 @@ data "aws_iam_policy_document" "sign_up_lambda_policy" {
     effect  = "Allow"
 
     actions = [
+      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:PutLogEvents"
     ]
