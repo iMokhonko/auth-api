@@ -83,6 +83,14 @@ data "aws_iam_policy_document" "handle_user_register_lambda_policy" {
 
     resources = ["arn:aws:logs:*:*:*"]
   }
+
+  statement {
+    actions = [
+      "ses:SendEmail",
+      "ses:SendRawEmail",
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "handle_user_register_policy" {

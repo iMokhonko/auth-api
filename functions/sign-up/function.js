@@ -2,6 +2,8 @@ const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
 // const kms = new AWS.KMS({ region: 'us-east-1' });
 
+const { v4: uuidv4 } = require('uuid');
+
 const infrastructure = require('infrastructure.cligenerated.json');
 
 const encryptPassword = async (password) => {
@@ -34,12 +36,15 @@ const isUserExistWithLogin = async (login = '') => {
   }
 };
 
-const addUserToDB = async ({ login, password }) => {
+const addUserToDB = async ({ login, password, email }) => {
   const params = {
     TableName: infrastructure.database.dynamo_db_table_name,
     Item: {
         login,
+        email,
         password: await encryptPassword(password),
+        verificationToken: uuidv4(),
+        isVerified: false,
         created: Date.now(),
     }
   };
@@ -64,7 +69,8 @@ exports.handler = async ({ body = {} } = {}) => {
   try {
     const {
       login = '',
-      password = ''
+      password = '',
+      email = ''
     } = JSON.parse(body) ?? {};
   
     const normalizedLogin = `${login}`.trim();
@@ -77,11 +83,17 @@ exports.handler = async ({ body = {} } = {}) => {
     if(!isLoginValid(normalizedLogin)) {
       return createResponse(400, { errorMessage: `Login can contain only [a-z,A-Z,0-9,_,.] characters` });
     }
+
+    // validate password
+    if(!email) {
+      return createResponse(400, { errorMessage: `Email required` });
+    }
   
     // validate password
     if(!password) {
       return createResponse(400, { errorMessage: `Password required` });
     }
+    
   
     // validate that user with such login does not exist
     const isUserWithThisLoginExist = await isUserExistWithLogin(normalizedLogin);
@@ -93,6 +105,7 @@ exports.handler = async ({ body = {} } = {}) => {
   
     await addUserToDB({
       login: normalizedLogin,
+      email,
       password
     });
 

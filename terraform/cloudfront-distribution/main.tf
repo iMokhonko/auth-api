@@ -6,6 +6,27 @@ locals {
   dns_record = "${var.feature == "master" ? "" : "${var.feature}."}${var.config.subdomain}${local.hasEnv ? ".${var.env}" : ""}"
 }
 
+# Create cache policy
+resource "aws_cloudfront_origin_request_policy" "origin_request_policy" {
+  name    = "custom-policy"
+  comment = "Custom policy that forwards all query strings, all cookies, and the Token header"
+
+  cookies_config {
+    cookie_behavior = "all"
+  }
+
+  headers_config {
+    header_behavior = "whitelist"
+    headers {
+      items = ["token"]
+    }
+  }
+
+  query_strings_config {
+    query_string_behavior = "all"
+  }
+}
+
 # Create cloudfront distribution for API
 resource "aws_cloudfront_distribution" "distribution" {
   origin {
@@ -35,6 +56,7 @@ resource "aws_cloudfront_distribution" "distribution" {
     compress               = true
     target_origin_id       = "ApiGatewayOrigin"
     cache_policy_id        = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" // Managed-CachingDisabled policy ID
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.origin_request_policy.id
   }
 
   price_class = var.feature == "master" ? "PriceClass_All" : "PriceClass_100"

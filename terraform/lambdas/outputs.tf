@@ -17,3 +17,13 @@ output "sign_in_lambda_function_name" {
 output "handle_user_register_function_name" {
   value = aws_lambda_function.handle_user_register_lambda.function_name
 }
+
+
+# verify endpoint
+output "verify_lambda_invoke_arn" {
+  value = aws_lambda_function.verify_lambda.invoke_arn
+}
+
+output "verify_lambda_function_name" {
+  value = aws_lambda_function.verify_lambda.function_name
+}
