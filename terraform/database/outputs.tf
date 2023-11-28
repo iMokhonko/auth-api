@@ -9,3 +9,7 @@ output "dynamo_db_table_name" {
 output "dynamo_db_table_stream_arn" {
   value = module.dynamodb_table.dynamodb_table_stream_arn
 }
+
+output "gsi_index_name" {
+  value = local.gsi_index_name
+}

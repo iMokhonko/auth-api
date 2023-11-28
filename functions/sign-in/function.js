@@ -62,7 +62,6 @@ const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => (
 });
 
 exports.handler = async ({ body = {} } = {}) => {
-  console.log('here start')
   try {
     const {
       login = '',
@@ -106,16 +105,15 @@ exports.handler = async ({ body = {} } = {}) => {
     return createResponse(200, {
       message: 'Successfuly logged in',
       token: {
-        value: jwt.sign({ login: user.login.S }, jwtSecret, { expiresIn: '30s' }),
-        maxAge: 30,
+        value: jwt.sign({ login: user.login.S, type: 'access_token' }, jwtSecret, { expiresIn: '5m' }),
+        maxAge: 60 * 5,
         sameSite: 'lax',
         secure: true,
         domain
       },
       refreshToken: {
-        value: jwt.sign({ login: user.login.S }, jwtSecret, { expiresIn: '2m' }),
-        maxAge: 60 * 2,
-        path: '/refresh',
+        value: jwt.sign({ login: user.login.S, type: 'refresh_token' }, jwtSecret, { expiresIn: '10d' }),
+        maxAge: 864000,
         sameSite: 'lax',
         secure: true,
         domain

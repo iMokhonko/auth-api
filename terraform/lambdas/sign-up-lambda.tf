@@ -54,10 +54,14 @@ data "aws_iam_policy_document" "sign_up_lambda_policy" {
 
     actions = [
       "dynamodb:GetItem",
-      "dynamodb:PutItem"
+      "dynamodb:PutItem",
+      "dynamodb:Query"
     ]
 
-    resources = [var.context.database.dynamodb_table_arn]
+    resources = [
+      var.context.database.dynamodb_table_arn,
+      "${var.context.database.dynamodb_table_arn}/index/*"
+    ]
   }
   
   statement {
