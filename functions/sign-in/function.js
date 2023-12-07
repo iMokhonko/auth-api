@@ -98,7 +98,7 @@ exports.handler = async ({ body = {} } = {}) => {
     // prod env does not appear in url
     const env = infrastructure.__meta.config.env === 'prod' ? '' : infrastructure.__meta.config.env;
 
-    const domain = env 
+    const domain = env
       ? `.${env}.${infrastructure.__meta.config.hostedZone}`
       : `.${infrastructure.__meta.config.hostedZone}`
 

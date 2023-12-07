@@ -26,7 +26,7 @@ const isUserExistWithLogin = async (login = '') => {
   try {
     const user = await dynamodb.get({
       TableName: infrastructure.database.dynamo_db_table_name,
-      Key: { login: `${login}`.toLocaleLowerCase() }
+      Key: { login }
     }).promise();
   
     return Boolean(user?.Item);
@@ -163,7 +163,7 @@ exports.handler = async ({ body = {} } = {}) => {
       lastName = ''
     } = JSON.parse(body) ?? {};
 
-    const normalizedLogin = `${login}`.trim();
+    const normalizedLogin = `${login}`.trim().toLocaleLowerCase();
     const normalizedEmail = `${email}`.trim();
     const normalizedFirstName = `${firstName}`.trim();
     const normalizedLastName = `${lastName}`.trim();

@@ -8,7 +8,7 @@ locals {
 
 # Create cache policy
 resource "aws_cloudfront_origin_request_policy" "origin_request_policy" {
-  name    = "custom-policy"
+  name    = "${var.env}-${var.feature}-${var.config.subdomain}-origin-request-policy"
   comment = "Custom policy that forwards all query strings, all cookies, and the Token header"
 
   cookies_config {

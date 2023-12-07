@@ -8,7 +8,8 @@ resource "aws_apigatewayv2_api" "api_gw" {
     max_age = 60
 
     # for prod env allow only one subdomain (Auth UI), for other envs for all origins
-    allow_origins = var.env == "prod" ? ["https://auth.${var.config.hostedZone}"] : ["*"]
+    # allow_origins = var.env == "prod" ? ["https://auth.${var.config.hostedZone}"] : ["*"]
+    allow_origins = ["*"]
   }
 
   tags = var.tags
