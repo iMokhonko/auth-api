@@ -4,12 +4,10 @@ resource "aws_apigatewayv2_api" "api_gw" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_methods = ["*"]
-    max_age = 60
-
-    # for prod env allow only one subdomain (Auth UI), for other envs for all origins
-    # allow_origins = var.env == "prod" ? ["https://auth.${var.config.hostedZone}"] : ["*"]
+    allow_methods = ["*"] # TODO change it to cloudfront distribution origin
+    max_age = 0
     allow_origins = ["*"]
+    allow_headers = ["*"]
   }
 
   tags = var.tags
