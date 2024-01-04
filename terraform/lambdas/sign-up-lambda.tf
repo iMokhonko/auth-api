@@ -52,10 +52,7 @@ data "aws_iam_policy_document" "sign_up_lambda_policy" {
   statement {
     effect  = "Allow"
 
-    actions = [
-      "dynamodb:PutItem",
-      "dynamodb:ConditionCheckItem"
-    ]
+    actions = ["dynamodb:PutItem"]
 
     resources = [var.context.database.dynamodb_table_arn]
   }
