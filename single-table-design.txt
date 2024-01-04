@@ -1,0 +1,69 @@
+[User entity]
+
+PK: USER#<user uuid>#
+SK: USER#<user uuid>#
+
+login: 'ivan.mokhonko'
+email: 'ivan.mokhonko@gmail.com'
+phoneNumber: '+380678671798'
+password: '1234'
+firstName: 'Ivan'
+lastName: 'Mokhonko'
+created: 124267349812634987 // timestamp
+
+--------------------------------------------------------
+
+[User meta entity]
+
+PK: USER_EMAIL#<email>#
+SK: USER_EMAIL#<email>#
+
+userId: <uuid>
+verified: true / false
+verificationData: 15/03/2023
+verificationToken: <uuid>
+subscriptionEnabled: true / false
+---
+PK: USER_PHONE_NUMBER#<phoneNumber>#
+SK: USER_PHONE_NUMBER#<phoneNumber>#
+
+userId: <uuid>
+verified: true / false
+verificationNumber: 1234
+verificationData: 15/03/2023
+subscriptionEnabled: true / false
+---
+PK: USER_LOGIN#<login>#
+SK: USER_LOGIN#<login>#
+
+userId: <uuid>
+
+--------------------------------------------------------
+
+[activity entity]
+
+PK: USER#<user uuid>
+SK: ACTIVITY#SIGN_UP#<uuid>#<TIMESTAMP>#
+timestamp: 1232342134
+---
+PK: USER#<user uuid>
+SK: ACTIVITY#SIGN_IN#<uuid>#<TIMESTAMP>#
+timestamp: 1232342134
+---
+PK: USER#<user uuid>
+SK: ACTIVITY#REFRESH_TOKEN#<uuid>#<TIMESTAMP>#
+timestamp: 1232342134
+---
+
+
+PK: USER#ID#<uuid>
+SK: USER#ID#<uuid>
+
+PK: USER#LOGIN#<login>
+SK: USER#LOGIN#<login>
+
+PK: USER#EMAIL#<email>
+SK: USER#EMAIL#<email>
+
+PK: USER#PHONE_NUMBER#<phone number>
+SK: USER#PHONE_NUMBER#<phone number>

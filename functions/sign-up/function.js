@@ -1,5 +1,9 @@
+// Load the AWS SDK
 const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
+
+// Create the DynamoDB service object
+const ddb = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
+
 // const kms = new AWS.KMS({ region: 'us-east-1' });
 
 const { v4: uuidv4 } = require('uuid');
@@ -9,72 +13,97 @@ const infrastructure = require('infrastructure.cligenerated.json');
 const encryptPassword = async (password) => {
   return password;
 
-  try {
-    const data = await kms.encrypt({
-      KeyId: 'af536286-f6c0-460c-a365-43d66834f710',  // The ID of the AWS KMS key you want to use.
-      Plaintext: password,  // The plaintext data to encrypt.
-    }).promise();
-
-    return data.CiphertextBlob.toString('base64');
-  } catch (err) {
-      console.log(err);
-      throw err;
-  }
 }
 
-const isUserExistWithLogin = async (login = '') => {
-  try {
-    const user = await dynamodb.get({
-      TableName: infrastructure.database.dynamo_db_table_name,
-      Key: { login }
-    }).promise();
-  
-    return Boolean(user?.Item);
-  } catch(error) {
-    console.error(error);
+const parseTransactionCanceledException = (str) => {
+  const start = str.indexOf('[');
+  const end = str.indexOf(']');
+  const arrayStr = str.substring(start+1, end);
 
-    // return that login exist to prevent creating the same login if lambda can't determine if this login is unique
-    return true;
-  }
-};
-
-const isUserExistWithEmail = async (email = '') => {
-  try {
-    const userExistParams = {
-      TableName: infrastructure.database.dynamo_db_table_name,
-      IndexName: infrastructure.database.gsi_index_name, 
-      KeyConditionExpression: "email = :user_email",
-      ExpressionAttributeValues: {
-        ":user_email": email
-      }
-    }; 
-  
-    const queryResult = await dynamodb.query(userExistParams).promise();
-
-    return Boolean(queryResult?.Items?.length);
-  } catch (error) {
-    console.error(error);
-    // return that email exist to prevent creating the same email if lambda can't determine if this email is unique
-    return true;
-  }
-};
+  return arrayStr.split(', ').map(x => x === 'None' ? null : x);
+}
 
 const addUserToDB = async ({ login, password, email, firstName, lastName }) => {
-  const params = {
-    TableName: infrastructure.database.dynamo_db_table_name,
-    Item: {
-        login,
-        email,
-        password: await encryptPassword(password),
-        firstName,
-        lastName,
-        verificationToken: uuidv4(),
-        isVerified: false,
-        created: Date.now(),
-    }
+  const userId = uuidv4();
+
+  const transactParams = {
+    TransactItems: [
+      {
+        Put: {
+            TableName: infrastructure.database.dynamo_db_table_name,
+            Item: { 
+              'pk': `USER#ID#${userId}#`,
+              'sk': `USER#ID#${userId}#`,
+              'createdAt': Date.now(),
+
+              login,
+              email,
+              password: await encryptPassword(password),
+              firstName,
+              lastName,
+              createdAt: Date.now(),
+            },
+            ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
+            ConditionExpression: 'attribute_not_exists(pk)'
+        }
+      },
+      {
+        Put: {
+          TableName: infrastructure.database.dynamo_db_table_name,
+          Item: {
+            'pk': `USER#LOGIN#${login}#`,
+            'sk': `USER#LOGIN#${login}#`,
+            'userId': userId,
+            'createdAt': Date.now(),
+          },
+          ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
+          ConditionExpression: 'attribute_not_exists(pk)',
+        },
+      },
+      {
+        Put: {
+          TableName: infrastructure.database.dynamo_db_table_name,
+          Item: {
+            'pk': `USER#EMAIL#${email}#`,
+            'sk': `USER#EMAIL#${email}#`,
+            'userId': userId,
+            'createdAt': Date.now(),
+          },
+          ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
+          ConditionExpression: 'attribute_not_exists(pk)'
+        },
+      }
+    ]
   };
 
-  return await dynamodb.put(params).promise();
+  try {
+    await ddb.transactWrite(transactParams).promise();
+
+    return { success: true };
+  } catch(e) {
+    if (e.code === "TransactionCanceledException") {
+      const errors = parseTransactionCanceledException(e.message);
+
+      const errorsMap = [
+        'User with such ID already exist, please try again',
+        'User with such login already exist',
+        'User with such email already exist'
+      ];
+
+      const errorIndex = errors.findIndex(error => error === 'ConditionalCheckFailed');
+
+      if(errorIndex !== -1) {
+        return {
+          success: false,
+          errorMessage: errorsMap[errorIndex]
+        }
+      } else {
+        throw new Error('Unhandled error', e);
+      }
+    } else {
+      throw e;
+    }
+  }
 };
 
 const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
@@ -182,28 +211,8 @@ exports.handler = async ({ body = {} } = {}) => {
     if(!isValid) {
       return createResponse(400, { errorMessage })
     }
-
-    const [
-      isUserWithThisLoginExist,
-      isUserWithThisEmailExist
-    ] = await Promise.all([
-      isUserExistWithLogin(normalizedLogin),
-      isUserExistWithEmail(normalizedEmail)
-    ]);
   
-    if(isUserWithThisLoginExist) {
-      return createResponse(409, { 
-        errorMessage: `User with ${normalizedLogin} already exist` 
-      });
-    }
-
-    if(isUserWithThisEmailExist) {
-      return createResponse(409, { 
-        errorMessage: `User with ${normalizedEmail} already exist` 
-      });
-    }
-  
-    await addUserToDB({
+    const { success, errorMessage: transactionErrorMessage } = await addUserToDB({
       login: normalizedLogin,
       email: normalizedEmail,
       password,
@@ -211,7 +220,11 @@ exports.handler = async ({ body = {} } = {}) => {
       lastName: normalizedLastName
     });
 
-    return createResponse(200, { message: `${normalizedLogin} created` });
+    if(success) {
+      return createResponse(200, { message: `${normalizedLogin} created` });
+    } else {
+      return createResponse(400, { message: transactionErrorMessage });
+    }
   } catch(e) {
     console.error(e);
 
