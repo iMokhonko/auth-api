@@ -1,5 +1,5 @@
 {
-  "name": "sign-in",
+  "name": "authorizer",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,8 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.427.0",
-    "@aws-sdk/client-kms": "^3.427.0",
     "jsonwebtoken": "^9.0.2"
   }
 }

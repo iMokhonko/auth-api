@@ -9,3 +9,7 @@ output "api_gw_execution_arn" {
 output "api_endpoint_url" {
   value = aws_apigatewayv2_api.api_gw.api_endpoint
 }
+
+output "api_gw_authorizer_id" {
+  value = aws_apigatewayv2_authorizer.authorizer.id
+}

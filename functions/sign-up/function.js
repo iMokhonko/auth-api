@@ -12,7 +12,6 @@ const infrastructure = require('infrastructure.cligenerated.json');
 
 const encryptPassword = async (password) => {
   return password;
-
 }
 
 const parseTransactionCanceledException = (str) => {
@@ -67,6 +66,7 @@ const addUserToDB = async ({ login, password, email, firstName, lastName }) => {
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL#${email}#`,
             'userId': userId,
+            'isVerified': false,
             'createdAt': Date.now(),
           },
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',

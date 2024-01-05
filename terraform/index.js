@@ -106,19 +106,27 @@ module.exports = ({
     },
 
     // Create secret for JWT tokens
-    // {
-    //   folderName: "secrets-manager",
-    //   description: "Create JWT secret for users JWT tokens",
+    {
+      folderName: "secrets-manager",
+      description: "Create JWT secret for users JWT tokens",
 
-    //   outputName: "secrets_manager",
+      outputName: "secrets_manager",
 
-    //   global: true
-    // },
+      global: true
+    },
 
     // Create DynamoDB table for users
     {
       folderName: "database",
       outputName: "database",
+    },
+
+    // Create lambda functions
+    {
+      folderName: "lambdas",
+      description: "Create lambda functions",
+
+      outputName: "lambdas"
     },
 
     // Create API gateway for this service
@@ -135,14 +143,6 @@ module.exports = ({
       description: "Create API Gateway Stage",
 
       outputName: "api_gw_stage"
-    },
-
-    // Create lambda functions
-    {
-      folderName: "lambdas",
-      description: "Create lambda functions",
-
-      outputName: "lambdas"
     },
 
     // Setup integrations between Lambda and API Gateway

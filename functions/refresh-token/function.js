@@ -1,21 +1,8 @@
-// Secrets Manager
-// const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
-// const secretsManagerClient = new SecretsManagerClient({ region: 'us-east-1'});
-
 const jwt = require('jsonwebtoken');
 const infrastructure = require('infrastructure.cligenerated.json');
 
-const getJwtTokenSecret = async () => {
-  return 'chinazes';
-  
-  // const data = await secretsManagerClient.send(
-  //   new GetSecretValueCommand({ 
-  //     SecretId: infrastructure.secrets_manager.secret_name
-  //   })
-  // );
-
-  // return data?.SecretString ?? null;
-};
+const { jwtSecretBase64Encoded } = require('./jwt-secret.cligenerated.json');
+const decodedJwtSecret = Buffer.from(jwtSecretBase64Encoded, 'base64').toString('utf8');
 
 const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
   statusCode,
@@ -55,11 +42,10 @@ exports.handler = async ({ body = {} } = {}) => {
       refreshToken = '',
     } = JSON.parse(body) ?? {};
     
-    const jwtSecret = await getJwtTokenSecret();
     const { 
       isValid = false, 
       decoded = null 
-    } = verifyJwtToken(refreshToken, jwtSecret);
+    } = verifyJwtToken(refreshToken, decodedJwtSecret);
 
     if(!isValid || decoded.type !== 'refresh_token') {
       return createResponse(401, { errorMessage: 'Invalid refresh token' });
@@ -73,15 +59,15 @@ exports.handler = async ({ body = {} } = {}) => {
       : `.${infrastructure.__meta.config.hostedZone}`
 
     return createResponse(200, {
-      token: {
-        value: jwt.sign({ login: decoded.login, type: 'access_token' }, jwtSecret, { expiresIn: '5m' }),
+      accessToken: {
+        value: jwt.sign({ userId: decoded.userId, type: 'access_token' }, decodedJwtSecret, { expiresIn: '5m' }),
         maxAge: 60 * 5,
         sameSite: 'lax',
         secure: true,
         domain
       },
       refreshToken: {
-        value: jwt.sign({ login: decoded.login, type: 'refresh_token' }, jwtSecret, { expiresIn: '10d' }),
+        value: jwt.sign({ userId: decoded.userId, type: 'refresh_token' }, decodedJwtSecret, { expiresIn: '10d' }),
         maxAge: 864000,
         sameSite: 'lax',
         secure: true,
