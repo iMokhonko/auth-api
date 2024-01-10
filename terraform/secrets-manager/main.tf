@@ -19,22 +19,3 @@ resource "aws_secretsmanager_secret_version" "jwt_secret" {
     ignore_changes = [secret_string]
   }
 }
-
-data "aws_iam_policy_document" "jwt_secret_policy" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_secretsmanager_secret.jwt_secret.arn]
-  }
-}
-
-resource "aws_secretsmanager_secret_policy" "example" {
-  secret_arn = aws_secretsmanager_secret.jwt_secret.arn
-  policy     = data.aws_iam_policy_document.jwt_secret_policy.json
-}
