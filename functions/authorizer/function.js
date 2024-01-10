@@ -1,7 +1,9 @@
-const jwt = require('jsonwebtoken');
+const AWS = require('aws-sdk');
 
-const { jwtSecretBase64Encoded } = require('./jwt-secret.cligenerated.json');
-const decodedJwtSecret = Buffer.from(jwtSecretBase64Encoded, 'base64').toString('utf8');
+// secrets manager
+const secretsManagerClient = new AWS.SecretsManager();
+
+const jwt = require('jsonwebtoken');
 
 const generatePolicy = (effect = 'Deny', context = {}) => {
   return {
@@ -20,6 +22,27 @@ const generatePolicy = (effect = 'Deny', context = {}) => {
   };
 };
 
+let cachedJwtSecret = null;
+const getJwtSecret = async () => {
+  if(cachedJwtSecret) return cachedJwtSecret;
+
+  try {
+    const secretData = await secretsManagerClient.getSecretValue({ 
+      SecretId: infrastructure.secrets_manager.secret_id
+    }).promise();
+    
+    const secret =  secretData?.SecretString ?? Buffer.from(secretData.SecretBinary, 'base64').toString('ascii');
+
+    cachedJwtSecret = secret;
+
+    return secret;
+  } catch (err) {
+    console.error(e)
+    
+    return null;
+  }
+};
+
 exports.handler = async (event) => {
   const [tokenType, token] = `${event.identitySource[0]}`.split(' ');
 
@@ -27,8 +50,10 @@ exports.handler = async (event) => {
     return generatePolicy('Deny');
   }
 
+  const jwtSecret = await getJwtSecret();
+
   try {
-    const decoded = jwt.verify(token, decodedJwtSecret);
+    const decoded = jwt.verify(token, jwtSecret);
 
     if(!decoded.type || decoded.type !== 'access_token') {
       return generatePolicy('Deny');

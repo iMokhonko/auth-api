@@ -66,4 +66,8 @@ output "authorizer_lambda_invoke_arn" {
 output "authorizer_lambda_function_name" {
   value = aws_lambda_function.authorizer_lambda.function_name
 }
+
+output "authorizer_lambda_role_arn" {
+  value = aws_iam_role.authorizer_lambda_exec.arn
+}
 # ---------

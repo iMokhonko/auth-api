@@ -7,7 +7,8 @@ data "aws_iam_policy_document" "jwt_secret_policy" {
       identifiers = [
         var.context.lambdas.sign_in_lambda_role_arn,
         var.context.lambdas.refresh_token_lambda_role_arn,
-        var.context.lambdas.google_sign_in_lambda_role_arn
+        var.context.lambdas.google_sign_in_lambda_role_arn,
+        var.context.lambdas.authorizer_lambda_role_arn
       ]
     }
 
