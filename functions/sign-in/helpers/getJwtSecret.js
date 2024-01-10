@@ -6,8 +6,6 @@ const infrastructure = require('../infrastructure.cligenerated.json');
 let cachedJwtSecret = null;
 
 module.exports = async () => {
-  console.log('cachedJwtSecret', cachedJwtSecret)
-
   if(cachedJwtSecret) 
     return cachedJwtSecret;
 
