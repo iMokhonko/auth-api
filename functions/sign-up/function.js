@@ -7,6 +7,7 @@ const ddb = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
 // const kms = new AWS.KMS({ region: 'us-east-1' });
 
 const { v4: uuidv4 } = require('uuid');
+const { OAuth2Client } = require('google-auth-library');
 
 const infrastructure = require('infrastructure.cligenerated.json');
 
@@ -22,7 +23,7 @@ const parseTransactionCanceledException = (str) => {
   return arrayStr.split(', ').map(x => x === 'None' ? null : x);
 }
 
-const addUserToDB = async ({ login, password, email, firstName, lastName }) => {
+const addUserToDB = async ({ login, password, email, firstName, lastName, isEmailVerified = false }) => {
   const userId = uuidv4();
 
   const transactParams = {
@@ -66,7 +67,7 @@ const addUserToDB = async ({ login, password, email, firstName, lastName }) => {
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL#${email}#`,
             'userId': userId,
-            'isVerified': false,
+            'isVerified': isEmailVerified,
             'createdAt': Date.now(),
           },
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
@@ -182,6 +183,38 @@ const verifyUserData = (userData = {}) => {
   };
 };
 
+const verifyGoogleCredentialToken = async (credential = null) => {
+  if(!credential) return {
+    isVerified: false,
+    email: null
+  };
+
+  const CLIENT_ID = '252143816418-tir6v1dcpo1l5069eoo9bti4h2lcph2j.apps.googleusercontent.com';
+
+  const client = new OAuth2Client(CLIENT_ID);
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: '252143816418-tir6v1dcpo1l5069eoo9bti4h2lcph2j.apps.googleusercontent.com',
+    });
+  
+    const payload = ticket.getPayload();
+
+    console.log("payload", payload)
+    
+    return {
+      isVerified: !!payload['email'],
+      email: payload['email']
+    }
+  } catch(e) {
+    return {
+      isVerified: false,
+      email: null
+    };
+  }
+};
+
 exports.handler = async ({ body = {} } = {}) => {
   try {
     const {
@@ -189,7 +222,8 @@ exports.handler = async ({ body = {} } = {}) => {
       password = '',
       email = '',
       firstName = '',
-      lastName = ''
+      lastName = '',
+      googleCredential = null
     } = JSON.parse(body) ?? {};
 
     const normalizedLogin = `${login}`.trim().toLocaleLowerCase();
@@ -211,10 +245,16 @@ exports.handler = async ({ body = {} } = {}) => {
     if(!isValid) {
       return createResponse(400, { errorMessage })
     }
+
+    const verifyGoogleCredentialTokenResult = await verifyGoogleCredentialToken(googleCredential);
+
+    const isEmailVerified = verifyGoogleCredentialTokenResult.isVerified 
+      && verifyGoogleCredentialTokenResult.email === normalizedEmail;
   
     const { success, errorMessage: transactionErrorMessage } = await addUserToDB({
       login: normalizedLogin,
       email: normalizedEmail,
+      isEmailVerified,
       password,
       firstName: normalizedFirstName,
       lastName: normalizedLastName
