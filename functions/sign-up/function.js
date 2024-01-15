@@ -23,7 +23,7 @@ const parseTransactionCanceledException = (str) => {
   return arrayStr.split(', ').map(x => x === 'None' ? null : x);
 }
 
-const addUserToDB = async ({ login, password, email, firstName, lastName, isEmailVerified = false }) => {
+const addUserToDB = async ({ username, password, email, firstName, lastName, isEmailVerified = false }) => {
   const userId = uuidv4();
 
   const transactParams = {
@@ -36,7 +36,7 @@ const addUserToDB = async ({ login, password, email, firstName, lastName, isEmai
               'sk': `USER#ID#${userId}#`,
               'createdAt': Date.now(),
 
-              login,
+              username,
               email,
               password: await encryptPassword(password),
               firstName,
@@ -51,8 +51,8 @@ const addUserToDB = async ({ login, password, email, firstName, lastName, isEmai
         Put: {
           TableName: infrastructure.database.dynamo_db_table_name,
           Item: {
-            'pk': `USER#LOGIN#${login}#`,
-            'sk': `USER#LOGIN#${login}#`,
+            'pk': `USER#USERNAME#${username}#`,
+            'sk': `USER#USERNAME#${username}#`,
             'userId': userId,
             'createdAt': Date.now(),
           },
@@ -80,23 +80,26 @@ const addUserToDB = async ({ login, password, email, firstName, lastName, isEmai
   try {
     await ddb.transactWrite(transactParams).promise();
 
-    return { success: true };
+    return { isSuccess: true };
   } catch(e) {
     if (e.code === "TransactionCanceledException") {
       const errors = parseTransactionCanceledException(e.message);
 
+      // errors map order should match TransactItems order
       const errorsMap = [
-        'User with such ID already exist, please try again',
-        'User with such login already exist',
-        'User with such email already exist'
+        ['unknown', 'User with such ID already exist, please try again'],
+        ['username', 'User with such username already exist'],
+        ['email', 'User with such email already exist']
       ];
 
       const errorIndex = errors.findIndex(error => error === 'ConditionalCheckFailed');
 
       if(errorIndex !== -1) {
         return {
-          success: false,
-          errorMessage: errorsMap[errorIndex]
+          isSuccess: false,
+          transactionErrors: {
+            [errorsMap[errorIndex][0]]: [errorsMap[errorIndex][1]]
+          }
         }
       } else {
         throw new Error('Unhandled error', e);
@@ -118,7 +121,7 @@ const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => (
   }
 });
 
-const isLoginValid = login => /^[a-zA-Z0-9_.]+$/.test(login);
+const isUsernameValid = username => /^[a-zA-Z0-9_.]+$/.test(username);
 
 const validateEmail = (email) => {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -126,60 +129,44 @@ const validateEmail = (email) => {
 }
 
 const verifyUserData = (userData = {}) => {
-  // validate login
-  if(!userData.login) {
-    return {
-      isValid: false,
-      errorMessage: 'Login required'
-    };
+  const errors = {};
+
+  // validate username
+  if(!userData.username) {
+    errors.username = [...(errors.username ?? []), 'Username is required'];
   }
 
-  if(!isLoginValid(userData.login)) {
-    return {
-      isValid: false,
-      errorMessage: 'User login should match this expression: [a-z,A-Z,0-9,_,.]'
-    };
+  if(!isUsernameValid(userData.username)) {
+    errors.username = [...(errors.username ?? []), 'Username can contain only letters, numbers, underscores and dots'];
   }
 
-  // validate password
   if(!userData.email) {
-    return {
-      isValid: false,
-      errorMessage: 'Email required'
-    };
+    errors.email = [...(errors.email ?? []), 'Email is required'];
   }
 
   if(!validateEmail(userData.email)) {
-    return {
-      isValid: false,
-      errorMessage: 'Invalid email format'
-    };
+    errors.email = [...(errors.email ?? []), 'Invalid email format'];
   }
 
-  // validate password
   if(!userData.password) {
-    return {
-      isValid: false,
-      errorMessage: 'Password required'
-    };
+    errors.password = [...(errors.password ?? []), 'Password is required'];
+  }
+
+  if(userData.password.length < 6) {
+    errors.password = [...(errors.password ?? []), 'Password should be longer than 5 characters'];
   }
 
   if(!userData.firstName) {
-    return {
-      isValid: false,
-      errorMessage: 'First name required'
-    };
+    errors.firstName = [...(errors.firstName ?? []), 'Firstname is required'];
   }
 
   if(!userData.lastName) {
-    return {
-      isValid: false,
-      errorMessage: 'First name required'
-    };
+    errors.lastName = [...(errors.lastName ?? []), 'Lastname is required'];
   }
 
   return {
-    isValid: true
+    isValid: Object.keys(errors).length === 0,
+    errors
   };
 };
 
@@ -200,8 +187,6 @@ const verifyGoogleCredentialToken = async (credential = null) => {
     });
   
     const payload = ticket.getPayload();
-
-    console.log("payload", payload)
     
     return {
       isVerified: !!payload['email'],
@@ -218,7 +203,7 @@ const verifyGoogleCredentialToken = async (credential = null) => {
 exports.handler = async ({ body = {} } = {}) => {
   try {
     const {
-      login = '',
+      username = '',
       password = '',
       email = '',
       firstName = '',
@@ -226,16 +211,16 @@ exports.handler = async ({ body = {} } = {}) => {
       googleCredential = null
     } = JSON.parse(body) ?? {};
 
-    const normalizedLogin = `${login}`.trim().toLocaleLowerCase();
+    const normalizedUsername = `${username}`.trim().toLocaleLowerCase();
     const normalizedEmail = `${email}`.trim();
     const normalizedFirstName = `${firstName}`.trim();
     const normalizedLastName = `${lastName}`.trim();
     
     const { 
       isValid = false, 
-      errorMessage = '' 
+      errors = []
     } = verifyUserData({
-      login: normalizedLogin,
+      username: normalizedUsername,
       password,
       email: normalizedEmail,
       firstName: normalizedFirstName,
@@ -243,7 +228,7 @@ exports.handler = async ({ body = {} } = {}) => {
     });
 
     if(!isValid) {
-      return createResponse(400, { errorMessage })
+      return createResponse(400, { errors })
     }
 
     const verifyGoogleCredentialTokenResult = await verifyGoogleCredentialToken(googleCredential);
@@ -251,8 +236,8 @@ exports.handler = async ({ body = {} } = {}) => {
     const isEmailVerified = verifyGoogleCredentialTokenResult.isVerified 
       && verifyGoogleCredentialTokenResult.email === normalizedEmail;
   
-    const { success, errorMessage: transactionErrorMessage } = await addUserToDB({
-      login: normalizedLogin,
+    const { isSuccess, transactionErrors } = await addUserToDB({
+      username: normalizedUsername,
       email: normalizedEmail,
       isEmailVerified,
       password,
@@ -260,10 +245,10 @@ exports.handler = async ({ body = {} } = {}) => {
       lastName: normalizedLastName
     });
 
-    if(success) {
-      return createResponse(200, { message: `${normalizedLogin} created` });
+    if(isSuccess) {
+      return createResponse(200, { message: `${normalizedUsername} created` });
     } else {
-      return createResponse(400, { message: transactionErrorMessage });
+      return createResponse(400, { errors: transactionErrors });
     }
   } catch(e) {
     console.error(e);

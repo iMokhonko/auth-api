@@ -24,8 +24,8 @@ module.exports = async (login = '', { loginType = null } = {}) => {
       const getUserByUsername = dynamoDbClient.send(new GetItemCommand({
         TableName: infrastructure.database.dynamo_db_table_name,
         Key: { 
-          pk: { S: `USER#LOGIN#${login?.toLocaleLowerCase?.()}#` },
-          sk: { S: `USER#LOGIN#${login?.toLocaleLowerCase?.()}#` } 
+          pk: { S: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#` },
+          sk: { S: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#` } 
         }
       }));
   
