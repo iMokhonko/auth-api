@@ -3,17 +3,18 @@ const authWithCredentials = require('./authWithCredentials');
 const authWithGoogle = require('./authWithGoogle');
 const refreshTokens = require('./refreshTokens');
 
-exports.handler = async ({ body = {} } = {}) => {
+exports.handler = async (event = {}) => {
   try {
+    console.log("query", event?.queryStringParameters);
+    
+    const { type } = event?.queryStringParameters ?? {};
+
+    const { body } = event;
     const parsedBody = JSON.parse(body) ?? {};
 
-    const { authType = null } = parsedBody;
-
-    switch(authType) {
-      case 'GOOGLE': {
-        const { googleCredential = null } = parsedBody;
-        
-        return await authWithGoogle(googleCredential);
+    switch(type) {
+      case 'GOOGLE': {        
+        return await authWithGoogle(event);
       }
 
       case 'CREDENTIALS': {

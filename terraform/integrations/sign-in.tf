@@ -11,6 +11,13 @@ resource "aws_apigatewayv2_integration" "sign_in_lambda" {
 resource "aws_apigatewayv2_route" "get_sign_in" {
   api_id = var.context.api_gw.api_gw_id
 
+  route_key = "GET /sign-in"
+  target    = "integrations/${aws_apigatewayv2_integration.sign_in_lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "post_sign_in" {
+  api_id = var.context.api_gw.api_gw_id
+
   route_key = "POST /sign-in"
   target    = "integrations/${aws_apigatewayv2_integration.sign_in_lambda.id}"
 }
