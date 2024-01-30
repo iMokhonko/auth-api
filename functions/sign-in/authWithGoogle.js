@@ -1,6 +1,7 @@
 const axios = require('axios');
 const querystring = require('querystring');
 const getUserIdByLogin = require('./helpers/getUserIdByLogin');
+const generateLoginReponse = require('./helpers/generateLoginResponse');
 
 const clientId = '252143816418-tir6v1dcpo1l5069eoo9bti4h2lcph2j.apps.googleusercontent.com';
 const clientSecret = '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';
@@ -31,6 +32,10 @@ module.exports= async (event) => {
 
       const userId = await getUserIdByLogin(email, { loginType: 'email' });
 
+      const authStatus = userId ? 'fully_signed_in' : 'provider_signed_in';
+
+      const loginResponse = userId ? await generateLoginReponse(userId) : {};
+
       return {
         statusCode: 200,
         headers: { 'Content-Type': 'text/html' },
@@ -40,9 +45,16 @@ module.exports= async (event) => {
           window.opener?.postMessage(JSON.stringify({
             type: "google-auth:success",
             payload: {
-              userId: '${userId}',
-              profile: ${JSON.stringify(profile)},
-              accessToken: '${tokens.access_token}'
+              status: '${authStatus}',
+
+              ${authStatus === 'fully_signed_in' ? `
+                authDetails: ${JSON.stringify(loginResponse)},
+              ` : ''}
+
+              providerData: {
+                profile: ${JSON.stringify(profile)},
+                accessToken: '${tokens.access_token}'
+              }
             }
           }), '*');
         </script>

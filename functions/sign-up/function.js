@@ -7,7 +7,7 @@ const ddb = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
 // const kms = new AWS.KMS({ region: 'us-east-1' });
 
 const { v4: uuidv4 } = require('uuid');
-const { OAuth2Client } = require('google-auth-library');
+const axios = require('axios');
 
 const infrastructure = require('infrastructure.cligenerated.json');
 
@@ -170,33 +170,35 @@ const verifyUserData = (userData = {}) => {
   };
 };
 
-const verifyGoogleCredentialToken = async (credential = null) => {
-  if(!credential) return {
+const verifyGoogleAccessToken = async (accessToken = null) => {
+  if(!accessToken) return {
     isVerified: false,
     email: null
   };
 
-  const CLIENT_ID = '252143816418-tir6v1dcpo1l5069eoo9bti4h2lcph2j.apps.googleusercontent.com';
-
-  const client = new OAuth2Client(CLIENT_ID);
-
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
-      audience: '252143816418-tir6v1dcpo1l5069eoo9bti4h2lcph2j.apps.googleusercontent.com',
-    });
+    const { data } = await axios.get(
+      'https://www.googleapis.com/oauth2/v2/userinfo', 
+      { 
+        headers: { 
+          Authorization: `Bearer ${accessToken}` 
+        } 
+      }
+    );
   
-    const payload = ticket.getPayload();
-    
+    if(data.error) {
+      throw new Error('Invalid token')
+    }
+  
     return {
-      isVerified: !!payload['email'],
-      email: payload['email']
+      isVerified: true,
+      ...data
     }
   } catch(e) {
     return {
       isVerified: false,
       email: null
-    };
+    }
   }
 };
 
@@ -208,7 +210,7 @@ exports.handler = async ({ body = {} } = {}) => {
       email = '',
       firstName = '',
       lastName = '',
-      googleCredential = null
+      googleAuthAccessToken = null
     } = JSON.parse(body) ?? {};
 
     const normalizedUsername = `${username}`.trim().toLocaleLowerCase();
@@ -231,10 +233,10 @@ exports.handler = async ({ body = {} } = {}) => {
       return createResponse(400, { errors })
     }
 
-    const verifyGoogleCredentialTokenResult = await verifyGoogleCredentialToken(googleCredential);
+    const verifyGoogleAccessTokenResult = await verifyGoogleAccessToken(googleAuthAccessToken);
 
-    const isEmailVerified = verifyGoogleCredentialTokenResult.isVerified 
-      && verifyGoogleCredentialTokenResult.email === normalizedEmail;
+    const isEmailVerified = verifyGoogleAccessTokenResult.isVerified 
+      && verifyGoogleAccessTokenResult.email === normalizedEmail;
   
     const { isSuccess, transactionErrors } = await addUserToDB({
       username: normalizedUsername,

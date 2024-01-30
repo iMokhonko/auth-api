@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "google-auth-library": "^9.4.2",
+    "axios": "^1.6.7",
     "uuid": "^9.0.1"
   }
 }
