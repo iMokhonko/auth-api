@@ -30,7 +30,7 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
     TransactItems: [
       {
         Put: {
-            TableName: infrastructure.database.dynamo_db_table_name,
+            TableName: infrastructure.featureResources.dynamodb.tableName,
             Item: { 
               'pk': `USER#ID#${userId}#`,
               'sk': `USER#ID#${userId}#`,
@@ -49,7 +49,7 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       },
       {
         Put: {
-          TableName: infrastructure.database.dynamo_db_table_name,
+          TableName: infrastructure.featureResources.dynamodb.tableName,
           Item: {
             'pk': `USER#USERNAME#${username}#`,
             'sk': `USER#USERNAME#${username}#`,
@@ -62,7 +62,7 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       },
       {
         Put: {
-          TableName: infrastructure.database.dynamo_db_table_name,
+          TableName: infrastructure.featureResources.dynamodb.tableName,
           Item: {
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL#${email}#`,

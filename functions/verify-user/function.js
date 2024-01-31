@@ -2,12 +2,12 @@ const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
 
 const infrastructure = require('infrastructure.cligenerated.json');
-const env = require('env.cligenerated.json');
+const services = require('services.cligenerated.json');
 
 const getUserDataByLogin = async (login = '') => {
   try {
     const user = await dynamodb.get({
-      TableName: infrastructure.database.dynamo_db_table_name,
+      TableName: infrastructure.featureResources.dynamodb.tableName,
       Key: { login: `${login}`.toLocaleLowerCase() }
     }).promise();
   
@@ -21,7 +21,7 @@ const getUserDataByLogin = async (login = '') => {
 const verifyUserByLogin = async (login = '') => {
   try {
     const params = {
-      TableName: infrastructure.database.dynamo_db_table_name,
+      TableName: infrastructure.featureResources.dynamodb.tableName,
       Key: { login: `${login}`.toLocaleLowerCase() },
       UpdateExpression: 'set isVerified = :isVerified',
       ExpressionAttributeValues:{ ':isVerified': true },
@@ -76,7 +76,7 @@ exports.handler = async (event) => {
 
     if(user.isVerified) {
       return createResponse(302, { message: `Your email address already verified` }, {
-        headers: { Location: `https://${env['www']}` },
+        headers: { Location: `https://${services['www']}` },
       });
     }
 
@@ -87,7 +87,7 @@ exports.handler = async (event) => {
     await verifyUserByLogin(login);
 
     return createResponse(302, { message: `Verified` }, {
-      headers: { Location: `https://${env['www']}` },
+      headers: { Location: `https://${services['www']}` },
     });
   } catch(e) {
     console.error(e);

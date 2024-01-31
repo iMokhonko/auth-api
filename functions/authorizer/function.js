@@ -28,7 +28,7 @@ const getJwtSecret = async () => {
 
   try {
     const secretData = await secretsManagerClient.getSecretValue({ 
-      SecretId: infrastructure.secrets_manager.secret_id
+      SecretId: infrastructure.globalResources.secretsManager.secretId
     }).promise();
     
     const secret =  secretData?.SecretString ?? Buffer.from(secretData.SecretBinary, 'base64').toString('ascii');

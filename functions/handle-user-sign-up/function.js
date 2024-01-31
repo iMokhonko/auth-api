@@ -1,7 +1,7 @@
 const AWS = require('aws-sdk');
 const ses = new AWS.SES();
 
-const env = require('./env.cligenerated.json');
+// const env = require('./env.cligenerated.json');
 
 exports.handler = async (event) => {  
   // // include only new users

@@ -53,10 +53,10 @@ const updateLambdaFunctionCode = async ({ lambda, bucket, key, lambdaName }) => 
 };
 
 module.exports = ({
-  serviceName: 'TEST Auth API',
+  serviceName: 'Auth API',
 
   terraformBackendConfiguration: {
-    serviceName: 'test-auth-api',
+    serviceName: 'auth-api',
     bucket: 'tf-state-backend-imokhonko',
     region: 'us-east-1'
   },
@@ -68,7 +68,7 @@ module.exports = ({
   
   config: {
     hostedZone: 'imokhonko.com',
-    subdomain: 'test-auth-api',
+    subdomain: 'auth-api',
   },
 
   deploy: async ({ env, feature, infrastructure, AWS, config }) => {
@@ -80,7 +80,11 @@ module.exports = ({
       ...lambdasDirPathes.map(folderPath => copyFileToFilder('env.cligenerated.json', `${folderPath}/env.cligenerated.json`)),
 
       // copy infrastructure.json to lambdas folder
-      ...lambdasDirPathes.map(folderPath => copyFileToFilder('infrastructure.cligenerated.json', `${folderPath}/infrastructure.cligenerated.json`))
+      ...lambdasDirPathes.map(folderPath => copyFileToFilder('infrastructure.cligenerated.json', `${folderPath}/infrastructure.cligenerated.json`)),
+
+
+      // copy services.json to lambdas folder
+      ...lambdasDirPathes.map(folderPath => copyFileToFilder('services.cligenerated.json', `${folderPath}/services.cligenerated.json`))
     ]);
 
     // archive lambda functions folders

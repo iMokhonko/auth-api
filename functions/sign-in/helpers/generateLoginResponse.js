@@ -1,4 +1,5 @@
-const infrastructure = require('../infrastructure.cligenerated.json');
+const { env, hostedZone } = require('../env.cligenerated.json');
+
 const getJwtSecret = require('./getJwtSecret');
 const jwt = require('jsonwebtoken');
 
@@ -6,11 +7,11 @@ module.exports = async (userId) => {
   const jwtSecret = await getJwtSecret();
 
   // prod env does not appear in url
-  const env = infrastructure.__meta.config.env === 'prod' ? '' : infrastructure.__meta.config.env;
+  const urlEnv = env === 'prod' ? '' : env;
 
   const domain = env
-    ? `.${env}.${infrastructure.__meta.config.hostedZone}`
-    : `.${infrastructure.__meta.config.hostedZone}`
+    ? `.${urlEnv}.${hostedZone}`
+    : `.${hostedZone}`
 
     return {
       accessToken: {
