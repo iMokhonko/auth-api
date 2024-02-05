@@ -5,6 +5,8 @@ const secretsManagerClient = new AWS.SecretsManager();
 
 const jwt = require('jsonwebtoken');
 
+const infrastructure = require('infrastructure.cligenerated.json');
+
 const generatePolicy = (effect = 'Deny', context = {}) => {
   return {
     principalId: 'user',
@@ -37,7 +39,7 @@ const getJwtSecret = async () => {
 
     return secret;
   } catch (err) {
-    console.error(e)
+    console.error(err)
     
     return null;
   }
