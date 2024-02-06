@@ -71,6 +71,18 @@ module.exports = ({
     subdomain: 'auth-api',
   },
 
+  // TODO change it so any sensitive values are not stored in plain text in code
+  envConfigMap: {
+    dev: {
+      google: {
+        oauth: {
+          clientId: '365035506691-qj6mpvjhr4vqkctkru6fpa0752k7jbrd.apps.googleusercontent.com',
+          clientSecret: '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'
+        }
+      }
+    }
+  },
+
   deploy: async ({ env, feature, infrastructure, AWS, config }) => {
 
     const lambdasDirPathes = getDirectories('/functions');
@@ -84,7 +96,10 @@ module.exports = ({
 
 
       // copy services.json to lambdas folder
-      ...lambdasDirPathes.map(folderPath => copyFileToFilder('services.cligenerated.json', `${folderPath}/services.cligenerated.json`))
+      ...lambdasDirPathes.map(folderPath => copyFileToFilder('services.cligenerated.json', `${folderPath}/services.cligenerated.json`)),
+
+      // copy config.json to lambdas folder
+      ...lambdasDirPathes.map(folderPath => copyFileToFilder('config.cligenerated.json', `${folderPath}/config.cligenerated.json`))
     ]);
 
     // archive lambda functions folders

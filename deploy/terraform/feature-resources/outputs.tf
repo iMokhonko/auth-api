@@ -14,6 +14,12 @@ output "lambdas" {
       roleArn = aws_iam_role.authorizer_lambda_exec.arn
     }
 
+    profile = {
+      invokeArn = aws_lambda_function.profile_lambda.invoke_arn
+      functionName = aws_lambda_function.profile_lambda.function_name
+      roleArn = aws_iam_role.profile_lambda_exec.arn
+    }
+
     signIn = {
       invokeArn = aws_lambda_function.sign_in_lambda.invoke_arn
       functionName = aws_lambda_function.sign_in_lambda.function_name

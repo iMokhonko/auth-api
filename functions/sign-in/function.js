@@ -1,7 +1,7 @@
 const createResponse = require('./helpers/createResponse');
 const authWithCredentials = require('./authWithCredentials');
 const authWithGoogle = require('./authWithGoogle');
-const refreshTokens = require('./refreshTokens');
+const authWithRefreshToken = require('./authWithRefreshToken.js');
 
 exports.handler = async (event = {}) => {
   try {    
@@ -11,11 +11,11 @@ exports.handler = async (event = {}) => {
     const parsedBody = JSON.parse(body) ?? {};
 
     switch(type) {
-      case 'GOOGLE': {        
+      case 'google': {        
         return await authWithGoogle(event);
       }
 
-      case 'CREDENTIALS': {
+      case 'credentials': {
         const { 
           login = null, 
           password = null 
@@ -24,10 +24,10 @@ exports.handler = async (event = {}) => {
         return await authWithCredentials(login, password);
       }
 
-      case 'REFRESH_TOKENS': {
+      case 'refresh_token': {
         const { refreshToken = null } = parsedBody;
 
-        return await refreshTokens(refreshToken);
+        return await authWithRefreshToken(refreshToken);
       }
 
       default: {
