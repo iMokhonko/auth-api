@@ -80,6 +80,15 @@ module.exports = ({
           clientSecret: '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'
         }
       }
+    },
+
+    prod: {
+      google: {
+        oauth: {
+          clientId: '365035506691-lg6a6neot1d68a0f1pt1p6mf5bidugcm.apps.googleusercontent.com',
+          clientSecret: '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'
+        }
+      }
     }
   },
 

@@ -32,6 +32,12 @@ output "lambdas" {
       roleArn = aws_iam_role.sign_up_lambda_exec.arn
     }
 
+    resetPassword = {
+      invokeArn = aws_lambda_function.reset_password_lambda.invoke_arn
+      functionName = aws_lambda_function.reset_password_lambda.function_name
+      roleArn = aws_iam_role.reset_password_lambda_exec.arn
+    }
+
     verifyUser = {
       invokeArn = aws_lambda_function.verify_user_lambda.invoke_arn
       functionName = aws_lambda_function.verify_user_lambda.function_name
