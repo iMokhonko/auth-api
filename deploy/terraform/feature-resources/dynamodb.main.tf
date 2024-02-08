@@ -9,6 +9,9 @@ module "dynamodb_table" {
   stream_enabled = true
   stream_view_type = "NEW_IMAGE"
 
+  ttl_enabled = true
+  ttl_attribute_name = "ttl"
+
   attributes = [
     {
       name = "pk"

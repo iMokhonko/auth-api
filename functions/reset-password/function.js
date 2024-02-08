@@ -37,7 +37,9 @@ const createUserResetTokenInDatabase = async (email) => {
               token: Buffer.from(JSON.stringify({
                 token: uuidv4(),
                 email // include email so it would be easier retrieve user data
-              })).toString('base64')
+              })).toString('base64'),
+
+              ttl: Math.floor((Date.now() + 86400000) / 1000) // 1 day
             },
             ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
         }
@@ -106,7 +108,14 @@ const checkIfResetTokenExist = async(email, resetToken) => {
 
     const data = await ddb.get(params).promise();
 
-    return data?.Item?.token === resetToken;
+    const { token = null, ttl = null } = data?.Item ?? {};
+
+    // if item ttl is already expired
+    if(ttl <= Math.floor((Date.now()) / 1000)) {
+      return false;
+    }
+
+    return token === resetToken;
   } catch(e) {
     console.error(e);
 
