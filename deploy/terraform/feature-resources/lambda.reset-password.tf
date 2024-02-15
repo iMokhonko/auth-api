@@ -53,6 +53,17 @@ data "aws_iam_policy_document" "reset_password_lambda_policy" {
     effect  = "Allow"
 
     actions = [
+      "ses:GetTemplate",
+      "ses:SendEmail"
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    effect  = "Allow"
+
+    actions = [
       "dynamodb:GetItem", # for getting user by email
       "dynamodb:ConditionCheckItem", # condition check for checking token & user
       "dynamodb:PutItem", # add change token

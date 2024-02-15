@@ -1,11 +1,14 @@
 // Load the AWS SDK
 const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require('uuid');
+const ses = new AWS.SES();
 
 // Create the DynamoDB service object
 const ddb = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
 
 const infrastructure = require('infrastructure.cligenerated.json');
+const { env } = require('env.cligenerated.json');
+const services = require('services.cligenerated.json');
 
 const validateEmail = (email) => {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -13,6 +16,11 @@ const validateEmail = (email) => {
 }
 
 const createUserResetTokenInDatabase = async (email) => {
+  const token = Buffer.from(JSON.stringify({
+    token: uuidv4(),
+    email // include email so it would be easier retrieve user data
+  })).toString('base64');
+
   const transactParams = {
     TransactItems: [
       {
@@ -34,10 +42,7 @@ const createUserResetTokenInDatabase = async (email) => {
               'sk': `USER#RESET_PASSWORD_TOKEN#${email}#`,
               'createdAt': Date.now(),
 
-              token: Buffer.from(JSON.stringify({
-                token: uuidv4(),
-                email // include email so it would be easier retrieve user data
-              })).toString('base64'),
+              token,
 
               ttl: Math.floor((Date.now() + 86400000) / 1000) // 1 day
             },
@@ -50,7 +55,10 @@ const createUserResetTokenInDatabase = async (email) => {
   try {
     await ddb.transactWrite(transactParams).promise();
 
-    return { isSuccess: true }
+    return { 
+      isSuccess: true,
+      token,
+     }
   } catch(e) {
     console.error(e);
 
@@ -198,6 +206,54 @@ const resetUserPassword = async (resetToken, password) => {
   }
 };
 
+const getEmailTemplateByName = async (templateName) => {
+  try {
+    const data = await ses.getTemplate({ TemplateName: templateName }).promise();
+    const { TextPart, HtmlPart, SubjectPart } = data.Template;
+
+    return { text: TextPart, html: HtmlPart, subject: SubjectPart };
+  } catch (err) {
+    console.error(err, err.stack);
+  }
+};
+
+const sendResetPasswordEmail = async (to, { text, html, subject }, resetToken) => {
+  const formattedHtml = html
+    .replaceAll('[[username]]', to)
+    .replaceAll('[[resetPasswordLink]]', `https://${services['auth']}/reset-password?resetPasswordToken=${resetToken}`);
+
+  const formattedText = text
+    .replaceAll('[[username]]', to)
+    .replaceAll('[[resetPasswordLink]]', `https://${services['auth']}/reset-password?resetPasswordToken=${resetToken}`)
+
+  const params = {
+    Destination: { ToAddresses: [to] },
+
+    Source: "iMokhonko Ukraine <no-reply@imokhonko.com>",
+
+    Message: {
+      Body: {
+        Html: {
+          Charset: "UTF-8",
+          Data: formattedHtml
+        },
+
+        Text: {
+          Charset: "UTF-8",
+          Data: formattedText
+        }
+        },
+        
+        Subject: {
+          Charset: 'UTF-8',
+          Data: subject
+        }
+    },
+  };
+
+  await ses.sendEmail(params).promise();
+};
+
 const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
   statusCode,
   ...(body && { body: JSON.stringify(body) }),
@@ -224,12 +280,21 @@ exports.handler = async (event) => {
 
       const { 
         isSuccess: isResetTokenCreated,
-        error: resetTokenCreationErrorMessage
+        error: resetTokenCreationErrorMessage,
+        token
       } = await createUserResetTokenInDatabase(normalizedEmail);
 
       if(!isResetTokenCreated) {
         return createResponse(200, { error: resetTokenCreationErrorMessage });
       }
+
+      const { html, text, subject } = await getEmailTemplateByName(`${env}-master-ResetPassword`);
+
+      await sendResetPasswordEmail(
+        normalizedEmail,
+        { html, text, subject },
+        token
+      );
 
       return createResponse(200, { error: 'If your email address exists in our database, you will receive a password recovery email' });
     }
