@@ -4,35 +4,74 @@ const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
 const infrastructure = require('infrastructure.cligenerated.json');
 const services = require('services.cligenerated.json');
 
-const getUserDataByLogin = async (login = '') => {
+const getVerificationTokenByEmail = async (email) => {
   try {
-    const user = await dynamodb.get({
+    if(!email) return null;
+
+    const params = {
       TableName: infrastructure.featureResources.dynamodb.tableName,
-      Key: { login: `${login}`.toLocaleLowerCase() }
-    }).promise();
-  
-    return user?.Item;
-  } catch(error) {
-    console.error(error)
+      Key: {
+        'pk': `USER#EMAIL#${email}#`,
+        'sk': `USER#EMAIL_VERIFICATION_TOKEN#${email}#`
+      }
+    };
+
+    const data = await dynamodb.get(params).promise();
+
+    return data?.Item?.token ?? null;
+  } catch(e) {
     return null;
   }
 };
 
-const verifyUserByLogin = async (login = '') => {
-  try {
-    const params = {
-      TableName: infrastructure.featureResources.dynamodb.tableName,
-      Key: { login: `${login}`.toLocaleLowerCase() },
-      UpdateExpression: 'set isVerified = :isVerified',
-      ExpressionAttributeValues:{ ':isVerified': true },
-      ReturnValues: 'UPDATED_NEW'
-    };
+const verifyUserEmail = async (email) => {
+  const transactParams = {
+    TransactItems: [
+      {
+        Update: {
+          TableName: infrastructure.featureResources.dynamodb.tableName,
+          Key: { 
+            'pk': `USER#EMAIL#${email}#`,
+            'sk': `USER#EMAIL#${email}#`,
+          },
+          UpdateExpression: "SET #isVerified = :isVerified",
+          ExpressionAttributeNames: { "#isVerified": "isVerified" },
+          ExpressionAttributeValues: { ":isVerified": true },
+          ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
+          ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk)',
+        }
+      },
+      {
+        Delete: {
+          TableName: infrastructure.featureResources.dynamodb.tableName,
+          Key: { 
+            'pk': `USER#EMAIL#${email}#`,
+            'sk': `USER#EMAIL_VERIFICATION_TOKEN#${email}#`,
+          },
+          ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
+        }
+      }
+    ]
+  };
 
-    return await dynamodb.update(params).promise();
+  try {
+    await dynamodb.transactWrite(transactParams).promise();
+
+    return { isSuccess: true };
   } catch(e) {
-    console.error(e);
-    
-    throw new Error(e);
+    if (e.code === "TransactionCanceledException") {
+      return { 
+        isSuccess: false,
+        error: 'Invalid verification token'
+      }
+    } else {
+      console.error(e);
+
+      return { 
+        isSuccess: false,
+        error: 'Something went wrong, please try again later'
+      }
+    }
   }
 };
 
@@ -50,45 +89,57 @@ const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => (
 exports.handler = async (event) => {
   try {
     const { 
-      token = null
+      token: base64Token = null
     } = event.queryStringParameters;
   
-    if(!token) {
+    if(!base64Token) {
       return createResponse(400, { errorMessage: 'Verification token required' });
     }
-  
-    const decodedData = Buffer.from(token, 'base64').toString('utf8');
 
-    const {
-      verificationToken = null,
-      login = null
-    } = JSON.parse(decodedData);
-  
-    if(!verificationToken || !login) {
+    console.log('user provided token', base64Token);
+
+    const { email, token } = JSON.parse(Buffer.from(base64Token, 'base64').toString()) ?? {};
+
+    if(!email || !token) {
       return createResponse(400, { errorMessage: `Invalid verification token` });
     }
 
-    const user = await getUserDataByLogin(login);
+    const userEmailVerificationToken = await getVerificationTokenByEmail(email);
 
-    if(!user) {
-      return createResponse(400, { errorMessage: `Invalid verification token` });
-    }
+    console.log('userEmailVerificationToken', userEmailVerificationToken);
 
-    if(user.isVerified) {
-      return createResponse(302, { message: `Your email address already verified` }, {
-        headers: { Location: `https://${services['www']}` },
+    // if token does not exist it means user is verified
+    if(!userEmailVerificationToken) {
+      return createResponse(
+        302, 
+        { message: `${email} verified` }, 
+        { headers: { Location: `https://${services['auth']}/email-verification-success-page?message=${encodeURIComponent(`${email} verified!`)}` },
       });
     }
 
-    if(user.verificationToken !== verificationToken) {
-      return createResponse(400, { errorMessage: `Invalid verification token` });
+    if(userEmailVerificationToken !== base64Token) {
+      return createResponse(
+        302, 
+        { message: `Invalid verification token` }, 
+        { headers: { Location: `https://${services['auth']}/email-verification-error-page?message=${encodeURIComponent(`Invalid verification token`)}` },
+      });
     }
 
-    await verifyUserByLogin(login);
-
-    return createResponse(302, { message: `Verified` }, {
-      headers: { Location: `https://${services['www']}` },
-    });
+    const { isSuccess, error } = await verifyUserEmail(email);
+    
+    if(isSuccess) {
+      return createResponse(
+        302, 
+        { message: `${email} verified` },
+        { headers: { Location: `https://${services['auth']}/email-verification-success-page?message=${encodeURIComponent(`${email} verified!`)}` },
+      });
+    } else {
+      return createResponse(
+        302, 
+        { message: error }, 
+        { headers: { Location: `https://${services['auth']}/email-verification-error-page?message=${encodeURIComponent(error)}` },
+      });
+    }
   } catch(e) {
     console.error(e);
 

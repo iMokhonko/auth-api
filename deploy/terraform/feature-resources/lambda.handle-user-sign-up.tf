@@ -86,9 +86,10 @@ data "aws_iam_policy_document" "handle_user_sign_up_lambda_policy" {
 
   statement {
     actions = [
-      "ses:SendEmail",
-      "ses:SendRawEmail",
+      "ses:GetTemplate",
+      "ses:SendEmail"
     ]
+    
     resources = ["*"]
   }
 }

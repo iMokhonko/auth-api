@@ -61,7 +61,8 @@ data "aws_iam_policy_document" "verify_user_lambda_policy" {
 
     actions = [
       "dynamodb:GetItem",
-      "dynamodb:UpdateItem"
+      "dynamodb:UpdateItem",
+      "dynamodb:DeleteItem"
     ]
 
     resources = [module.dynamodb_table.dynamodb_table_arn]
