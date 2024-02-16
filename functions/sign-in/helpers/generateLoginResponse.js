@@ -7,10 +7,10 @@ module.exports = async (userId) => {
   const jwtSecret = await getJwtSecret();
 
   // prod env does not appear in url
-  const urlEnv = env === 'prod' ? '' : env;
+  const urlEnv = env === 'prod' ? '' : `.${env}`;
 
   const domain = env
-    ? `.${urlEnv}.${hostedZone}`
+    ? `${urlEnv}.${hostedZone}`
     : `.${hostedZone}`
 
     return {
