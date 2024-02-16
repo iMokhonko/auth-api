@@ -30,7 +30,7 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
     TransactItems: [
       {
         Put: {
-            TableName: infrastructure.database.dynamo_db_table_name,
+            TableName: infrastructure.featureResources.dynamodb.tableName,
             Item: { 
               'pk': `USER#ID#${userId}#`,
               'sk': `USER#ID#${userId}#`,
@@ -49,7 +49,7 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       },
       {
         Put: {
-          TableName: infrastructure.database.dynamo_db_table_name,
+          TableName: infrastructure.featureResources.dynamodb.tableName,
           Item: {
             'pk': `USER#USERNAME#${username}#`,
             'sk': `USER#USERNAME#${username}#`,
@@ -62,7 +62,7 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       },
       {
         Put: {
-          TableName: infrastructure.database.dynamo_db_table_name,
+          TableName: infrastructure.featureResources.dynamodb.tableName,
           Item: {
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL#${email}#`,
@@ -76,6 +76,27 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       }
     ]
   };
+
+  if(!isEmailVerified) {
+    const token = Buffer.from(JSON.stringify({
+      token: uuidv4(),
+      email
+    })).toString('base64');
+
+    transactParams.TransactItems.push({
+      Put: {
+        TableName: infrastructure.featureResources.dynamodb.tableName,
+        Item: {
+          pk: `USER#EMAIL#${email}#`,
+          sk: `USER#EMAIL_VERIFICATION_TOKEN#${email}#`,
+          token,
+          username,
+          createdAt: Date.now(),
+        },
+        ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
+      }
+    });
+  }
 
   try {
     await ddb.transactWrite(transactParams).promise();

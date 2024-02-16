@@ -10,7 +10,7 @@ module.exports = async (login = '', { loginType = null } = {}) => {
 
     if(!loginType || loginType === 'email') {
       const getUserByEmail = dynamoDbClient.send(new GetItemCommand({
-        TableName: infrastructure.database.dynamo_db_table_name,
+        TableName: infrastructure.featureResources.dynamodb.tableName,
         Key: { 
           pk: { S: `USER#EMAIL#${login}#` },
           sk: { S: `USER#EMAIL#${login}#` } 
@@ -22,7 +22,7 @@ module.exports = async (login = '', { loginType = null } = {}) => {
 
     if(!loginType || loginType === 'username') {
       const getUserByUsername = dynamoDbClient.send(new GetItemCommand({
-        TableName: infrastructure.database.dynamo_db_table_name,
+        TableName: infrastructure.featureResources.dynamodb.tableName,
         Key: { 
           pk: { S: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#` },
           sk: { S: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#` } 
