@@ -28,7 +28,7 @@ POLICY
 resource "aws_lambda_function" "sign_in_lambda" {
   function_name = local.sign_in_lambda_name
 
-  runtime = "nodejs16.x"
+  runtime = "nodejs18.x"
   handler = "function.handler"
 
   filename = "dummy.zip"
@@ -50,15 +50,15 @@ resource "aws_cloudwatch_log_group" "sign_in_lambda_cloudwatch_log_group" {
 # Define the Lambda access policy
 data "aws_iam_policy_document" "sign_in_lambda_policy" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = ["dynamodb:GetItem"]
 
     resources = [module.dynamodb_table.dynamodb_table_arn]
   }
-  
+
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "logs:CreateLogGroup",
@@ -74,7 +74,7 @@ resource "aws_iam_policy" "sign_in_policy" {
   name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-sign-in"
   description = "Allow /sign-in to add logs to cloudwatch and access DynamoDB table"
   policy      = data.aws_iam_policy_document.sign_in_lambda_policy.json
-  
+
   tags = var.tags
 }
 

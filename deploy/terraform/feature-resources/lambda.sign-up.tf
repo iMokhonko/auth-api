@@ -28,7 +28,7 @@ POLICY
 resource "aws_lambda_function" "sign_up_lambda" {
   function_name = local.sign_up_lambda_name
 
-  runtime = "nodejs16.x"
+  runtime = "nodejs18.x"
   handler = "function.handler"
 
   filename = "dummy.zip"
@@ -50,15 +50,15 @@ resource "aws_cloudwatch_log_group" "sign_up_lambda_cloudwatch_log_group" {
 # Define the Lambda access policy
 data "aws_iam_policy_document" "sign_up_lambda_policy" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = ["dynamodb:PutItem"]
 
     resources = [module.dynamodb_table.dynamodb_table_arn]
   }
-  
+
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "logs:CreateLogGroup",

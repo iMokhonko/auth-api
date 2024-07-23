@@ -28,7 +28,7 @@ POLICY
 resource "aws_lambda_function" "reset_password_lambda" {
   function_name = local.reset_password_lambda_name
 
-  runtime = "nodejs16.x"
+  runtime = "nodejs18.x"
   handler = "function.handler"
 
   filename = "dummy.zip"
@@ -50,7 +50,7 @@ resource "aws_cloudwatch_log_group" "reset_password_lambda_cloudwatch_log_group"
 # Define the Lambda access policy
 data "aws_iam_policy_document" "reset_password_lambda_policy" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "ses:GetTemplate",
@@ -61,21 +61,21 @@ data "aws_iam_policy_document" "reset_password_lambda_policy" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
-      "dynamodb:GetItem", # for getting user by email
+      "dynamodb:GetItem",            # for getting user by email
       "dynamodb:ConditionCheckItem", # condition check for checking token & user
-      "dynamodb:PutItem", # add change token
-      "dynamodb:DeleteItem", # remove change token
-      "dynamodb:UpdateItem" # update user password
+      "dynamodb:PutItem",            # add change token
+      "dynamodb:DeleteItem",         # remove change token
+      "dynamodb:UpdateItem"          # update user password
     ]
 
     resources = [module.dynamodb_table.dynamodb_table_arn]
   }
-  
+
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "logs:CreateLogGroup",

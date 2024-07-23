@@ -28,7 +28,7 @@ POLICY
 resource "aws_lambda_function" "handle_user_sign_up_lambda" {
   function_name = local.handle_user_sign_up_lambda_name
 
-  runtime = "nodejs16.x"
+  runtime = "nodejs18.x"
   handler = "function.handler"
 
   filename = "dummy.zip"
@@ -39,9 +39,9 @@ resource "aws_lambda_function" "handle_user_sign_up_lambda" {
 
   tags = var.tags
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_role_policy_attachment.handle_user_sign_up_lambda_policy,
-    aws_cloudwatch_log_group.handle_user_sign_up_lambda_cloudwatch_log_group 
+    aws_cloudwatch_log_group.handle_user_sign_up_lambda_cloudwatch_log_group
   ]
 }
 
@@ -57,7 +57,7 @@ resource "aws_cloudwatch_log_group" "handle_user_sign_up_lambda_cloudwatch_log_g
 # Define the Lambda access policy
 data "aws_iam_policy_document" "handle_user_sign_up_lambda_policy" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "dynamodb:GetRecords",
@@ -71,9 +71,9 @@ data "aws_iam_policy_document" "handle_user_sign_up_lambda_policy" {
       module.dynamodb_table.dynamodb_table_arn
     ]
   }
-  
+
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "logs:CreateLogGroup",
@@ -89,7 +89,7 @@ data "aws_iam_policy_document" "handle_user_sign_up_lambda_policy" {
       "ses:GetTemplate",
       "ses:SendEmail"
     ]
-    
+
     resources = ["*"]
   }
 }
@@ -98,7 +98,7 @@ resource "aws_iam_policy" "handle_user_sign_up_policy" {
   name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-handler-user-sign-up"
   description = "Allow handle-user-sign-up lambda to add logs to cloudwatch"
   policy      = data.aws_iam_policy_document.handle_user_sign_up_lambda_policy.json
-  
+
   tags = var.tags
 }
 

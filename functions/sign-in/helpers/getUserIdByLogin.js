@@ -4,6 +4,8 @@ const infrastructure = require('infrastructure.cligenerated.json');
 const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
 const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
 
+const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
+
 module.exports = async (login = '', { loginType = null } = {}) => {
   try {
     const promises = [];
@@ -11,10 +13,10 @@ module.exports = async (login = '', { loginType = null } = {}) => {
     if(!loginType || loginType === 'email') {
       const getUserByEmail = dynamoDbClient.send(new GetItemCommand({
         TableName: infrastructure.featureResources.dynamodb.tableName,
-        Key: { 
-          pk: { S: `USER#EMAIL#${login}#` },
-          sk: { S: `USER#EMAIL#${login}#` } 
-        }
+        Key: marshall({ 
+          pk: `USER#EMAIL#${login}#`,
+          sk: `USER#EMAIL#${login}#`
+        })
       }));
 
       promises.push(getUserByEmail);
@@ -23,10 +25,10 @@ module.exports = async (login = '', { loginType = null } = {}) => {
     if(!loginType || loginType === 'username') {
       const getUserByUsername = dynamoDbClient.send(new GetItemCommand({
         TableName: infrastructure.featureResources.dynamodb.tableName,
-        Key: { 
-          pk: { S: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#` },
-          sk: { S: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#` } 
-        }
+        Key: marshall({ 
+          pk: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#`,
+          sk: `USER#USERNAME#${login?.toLocaleLowerCase?.()}#`
+        })
       }));
   
       promises.push(getUserByUsername);
@@ -36,8 +38,16 @@ module.exports = async (login = '', { loginType = null } = {}) => {
       userByUsername,
       userByEmail
     ] = await Promise.all(promises);
-  
-    return userByUsername?.Item?.userId?.S ?? userByEmail?.Item?.userId?.S ?? null;
+
+    const normalizedUserByUsername = userByUsername?.Item?.userId 
+      ? unmarshall(userByUsername?.Item)
+      : null;
+
+    const normalizedUserByEmail = userByEmail?.Item?.userId 
+      ? unmarshall(userByEmail?.Item)
+      : null;
+
+    return normalizedUserByUsername?.userId ?? normalizedUserByEmail?.userId ?? null;
   } catch(e) {
     console.error(e);
     

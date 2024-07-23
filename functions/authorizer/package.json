@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.616.0",
     "jsonwebtoken": "^9.0.2"
   }
 }

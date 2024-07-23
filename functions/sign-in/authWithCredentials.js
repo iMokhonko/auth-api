@@ -23,7 +23,7 @@ module.exports = async (login = null, password = null) => {
   if(!user) 
     return createResponse(401, { errorMessage: `Invalid login or password` });
 
-  const decryptedPassword = await decryptPassword(user.password.S);
+  const decryptedPassword = await decryptPassword(user.password);
 
   if(decryptedPassword !== password) 
     return createResponse(401, { errorMessage: `Invalid login or password` });

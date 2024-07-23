@@ -1,42 +1,58 @@
-const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient({ region: 'us-east-1' });
+const { DynamoDBClient, TransactWriteItemsCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
+const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
+
+const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
 const infrastructure = require('infrastructure.cligenerated.json');
 const services = require('services.cligenerated.json');
+
+const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
+  statusCode,
+
+  ...(body && { body: JSON.stringify(body) }),
+
+  headers: {
+    "Content-Type": "application/json",
+    ...headers
+  }
+});
 
 const getVerificationTokenByEmail = async (email) => {
   try {
     if(!email) return null;
 
-    const params = {
+    const getItemCommandParams = {
       TableName: infrastructure.featureResources.dynamodb.tableName,
-      Key: {
+      Key: marshall({
         'pk': `USER#EMAIL#${email}#`,
         'sk': `USER#EMAIL_VERIFICATION_TOKEN#${email}#`
-      }
+      })
     };
 
-    const data = await dynamodb.get(params).promise();
+    const getItemCommand = new GetItemCommand(getItemCommandParams);
+    const data = await dynamoDbClient.send(getItemCommand);
 
-    return data?.Item?.token ?? null;
+    const normalizedVerificationTokenObject = unmarshall(data?.Item ?? {});
+
+    return normalizedVerificationTokenObject?.token ?? null;
   } catch(e) {
     return null;
   }
 };
 
 const verifyUserEmail = async (email) => {
-  const transactParams = {
+  const transactWriteItemsParams = {
     TransactItems: [
       {
         Update: {
           TableName: infrastructure.featureResources.dynamodb.tableName,
-          Key: { 
+          Key: marshall({ 
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL#${email}#`,
-          },
+          }),
           UpdateExpression: "SET #isVerified = :isVerified",
           ExpressionAttributeNames: { "#isVerified": "isVerified" },
-          ExpressionAttributeValues: { ":isVerified": true },
+          ExpressionAttributeValues: marshall({ ":isVerified": true }),
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
           ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk)',
         }
@@ -44,18 +60,20 @@ const verifyUserEmail = async (email) => {
       {
         Delete: {
           TableName: infrastructure.featureResources.dynamodb.tableName,
-          Key: { 
+          Key: marshall({ 
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL_VERIFICATION_TOKEN#${email}#`,
-          },
+          }),
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
         }
       }
     ]
   };
 
+  const transactWriteItemsCommand = new TransactWriteItemsCommand(transactWriteItemsParams);
+
   try {
-    await dynamodb.transactWrite(transactParams).promise();
+    await dynamoDbClient.send(transactWriteItemsCommand);
 
     return { isSuccess: true };
   } catch(e) {
@@ -75,17 +93,6 @@ const verifyUserEmail = async (email) => {
   }
 };
 
-const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
-  statusCode,
-
-  ...(body && { body: JSON.stringify(body) }),
-
-  headers: {
-    "Content-Type": "application/json",
-    ...headers
-  }
-});
-
 exports.handler = async (event) => {
   try {
     const { 
@@ -96,8 +103,6 @@ exports.handler = async (event) => {
       return createResponse(400, { errorMessage: 'Verification token required' });
     }
 
-    console.log('user provided token', base64Token);
-
     const { email, token } = JSON.parse(Buffer.from(base64Token, 'base64').toString()) ?? {};
 
     if(!email || !token) {
@@ -105,8 +110,6 @@ exports.handler = async (event) => {
     }
 
     const userEmailVerificationToken = await getVerificationTokenByEmail(email);
-
-    console.log('userEmailVerificationToken', userEmailVerificationToken);
 
     // if token does not exist it means user is verified
     if(!userEmailVerificationToken) {

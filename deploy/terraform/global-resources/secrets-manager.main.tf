@@ -3,7 +3,7 @@ data "aws_secretsmanager_random_password" "random_secret_password" {
 }
 
 resource "aws_secretsmanager_secret" "jwt_secret" {
-  name_prefix = "${var.env}/${var.config.subdomain}/jwt-secret-"
+  name_prefix = "${var.env}/${var.config.subdomain}/auth-api-jwt-secret-"
   description = "JWT Secret for users JWT tokens"
 
   tags = var.tags

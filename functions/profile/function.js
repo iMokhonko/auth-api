@@ -1,9 +1,3 @@
-// Load the AWS SDK
-const AWS = require('aws-sdk');
-
-// Create the DynamoDB service object
-const ddb = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
-
 const getUserById = require('./getUserById');
 
 const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
@@ -23,18 +17,18 @@ exports.handler = async (event) => {
   }
 
   try {
-    const user = await getUserById(id);
+    const { email, firstName, lastName, username } = await getUserById(id);
 
-    if(!user) {
+    if(!username) {
       return createResponse(404, { error: "User does not exist" });
     }
 
     return createResponse(200, {
       id,
-      email: user.email.S,
-      firstName: user.firstName.S,
-      lastName: user.lastName.S,
-      username: user.username.S
+      email,
+      firstName,
+      lastName,
+      username
     });
   } catch (error) {
     console.error(error);

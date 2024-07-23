@@ -1,13 +1,9 @@
-// Load the AWS SDK
-const AWS = require('aws-sdk');
-
-// Create the DynamoDB service object
-const ddb = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
-
-// const kms = new AWS.KMS({ region: 'us-east-1' });
+const { DynamoDBClient, TransactWriteItemsCommand } = require('@aws-sdk/client-dynamodb');
+const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
 
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');
+const { marshall } = require("@aws-sdk/util-dynamodb");
 
 const infrastructure = require('infrastructure.cligenerated.json');
 
@@ -26,12 +22,12 @@ const parseTransactionCanceledException = (str) => {
 const addUserToDB = async ({ username, password, email, firstName, lastName, isEmailVerified = false }) => {
   const userId = uuidv4();
 
-  const transactParams = {
+  const transactWriteItemsParams = {
     TransactItems: [
       {
         Put: {
             TableName: infrastructure.featureResources.dynamodb.tableName,
-            Item: { 
+            Item: marshall({ 
               'pk': `USER#ID#${userId}#`,
               'sk': `USER#ID#${userId}#`,
               'createdAt': Date.now(),
@@ -42,7 +38,7 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
               firstName,
               lastName,
               createdAt: Date.now(),
-            },
+            }),
             ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
             ConditionExpression: 'attribute_not_exists(pk)'
         }
@@ -50,12 +46,12 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       {
         Put: {
           TableName: infrastructure.featureResources.dynamodb.tableName,
-          Item: {
+          Item: marshall({
             'pk': `USER#USERNAME#${username}#`,
             'sk': `USER#USERNAME#${username}#`,
             'userId': userId,
             'createdAt': Date.now(),
-          },
+          }),
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
           ConditionExpression: 'attribute_not_exists(pk)',
         },
@@ -63,13 +59,13 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       {
         Put: {
           TableName: infrastructure.featureResources.dynamodb.tableName,
-          Item: {
+          Item: marshall({
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL#${email}#`,
             'userId': userId,
             'isVerified': isEmailVerified,
             'createdAt': Date.now(),
-          },
+          }),
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
           ConditionExpression: 'attribute_not_exists(pk)'
         },
@@ -83,23 +79,25 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
       email
     })).toString('base64');
 
-    transactParams.TransactItems.push({
+    transactWriteItemsParams.TransactItems.push({
       Put: {
         TableName: infrastructure.featureResources.dynamodb.tableName,
-        Item: {
+        Item: marshall({
           pk: `USER#EMAIL#${email}#`,
           sk: `USER#EMAIL_VERIFICATION_TOKEN#${email}#`,
           token,
           username,
           createdAt: Date.now(),
-        },
+        }),
         ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
       }
     });
   }
 
+  const transactWriteItemsCommand = new TransactWriteItemsCommand(transactWriteItemsParams);
+
   try {
-    await ddb.transactWrite(transactParams).promise();
+    await dynamoDbClient.send(transactWriteItemsCommand);
 
     return { isSuccess: true };
   } catch(e) {

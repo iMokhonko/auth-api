@@ -28,7 +28,7 @@ POLICY
 resource "aws_lambda_function" "authorizer_lambda" {
   function_name = local.authorizer_lambda_name
 
-  runtime = "nodejs16.x"
+  runtime = "nodejs18.x"
   handler = "function.handler"
 
   filename = "dummy.zip"
@@ -50,7 +50,7 @@ resource "aws_cloudwatch_log_group" "authorizer_lambda_cloudwatch_log_group" {
 # Define the Lambda access policy
 data "aws_iam_policy_document" "authorizer_lambda_policy" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "logs:CreateLogGroup",
@@ -66,7 +66,7 @@ resource "aws_iam_policy" "authorizer_policy" {
   name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-authorizer"
   description = "Authorizer for API endpoints"
   policy      = data.aws_iam_policy_document.authorizer_lambda_policy.json
-  
+
   tags = var.tags
 }
 

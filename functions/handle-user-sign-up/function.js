@@ -1,13 +1,14 @@
-const AWS = require('aws-sdk');
-const ses = new AWS.SES();
+const { SESClient, GetTemplateCommand, SendEmailCommand } = require("@aws-sdk/client-ses");
+const sesClient = new SESClient({ region: 'us-east-1' });
 
 const services = require('./services.cligenerated.json');
 const { env } = require('env.cligenerated.json');
 
 const getEmailTemplateByName = async (templateName) => {
+  const command = new GetTemplateCommand({ TemplateName: templateName });
+
   try {
-    const data = await ses.getTemplate({ TemplateName: templateName }).promise();
-    const { TextPart, HtmlPart, SubjectPart } = data.Template;
+    const { Template: { TextPart, HtmlPart, SubjectPart } } = await sesClient.send(command);;
 
     return { text: TextPart, html: HtmlPart, subject: SubjectPart };
   } catch (err) {
@@ -26,7 +27,7 @@ const sendVerifyEmail = async (to, { text, html, subject }, { token, username })
     .replaceAll('[[username]]', username)
     .replaceAll('[[verifyEmailLink]]', verificationLink)
 
-  const params = {
+  const sendEmailCommandParams = {
     Destination: { ToAddresses: [to] },
 
     Source: "iMokhonko Ukraine <no-reply@imokhonko.com>",
@@ -51,7 +52,8 @@ const sendVerifyEmail = async (to, { text, html, subject }, { token, username })
     },
   };
 
-  await ses.sendEmail(params).promise();
+  const sendEmailCommand = new SendEmailCommand(sendEmailCommandParams);
+  return await sesClient.send(sendEmailCommand);
 };
 
 exports.handler = async (event) => {  

@@ -28,7 +28,7 @@ POLICY
 resource "aws_lambda_function" "verify_user_lambda" {
   function_name = local.verify_user_lambda_name
 
-  runtime = "nodejs16.x"
+  runtime = "nodejs18.x"
   handler = "function.handler"
 
   filename = "dummy.zip"
@@ -39,9 +39,9 @@ resource "aws_lambda_function" "verify_user_lambda" {
 
   tags = var.tags
 
-  depends_on = [ 
+  depends_on = [
     aws_iam_role_policy_attachment.verify_user_lambda_policy,
-    aws_cloudwatch_log_group.verify_user_lambda_cloudwatch_log_group 
+    aws_cloudwatch_log_group.verify_user_lambda_cloudwatch_log_group
   ]
 }
 
@@ -57,7 +57,7 @@ resource "aws_cloudwatch_log_group" "verify_user_lambda_cloudwatch_log_group" {
 # Define the Lambda access policy
 data "aws_iam_policy_document" "verify_user_lambda_policy" {
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "dynamodb:GetItem",
@@ -67,9 +67,9 @@ data "aws_iam_policy_document" "verify_user_lambda_policy" {
 
     resources = [module.dynamodb_table.dynamodb_table_arn]
   }
-  
+
   statement {
-    effect  = "Allow"
+    effect = "Allow"
 
     actions = [
       "logs:CreateLogGroup",
@@ -85,7 +85,7 @@ resource "aws_iam_policy" "verify_policy" {
   name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-verify-user"
   description = "Allow /verify lambda to add logs to cloudwatch and read/update items in dynamo db table"
   policy      = data.aws_iam_policy_document.verify_user_lambda_policy.json
-  
+
   tags = var.tags
 }
 

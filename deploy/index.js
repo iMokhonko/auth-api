@@ -5,6 +5,10 @@ const path = require('path');
 const archiveFolder = require('./archiveFolder');
 const copyFileToFilder = require('./copyFileToFolder');
 
+// AWS
+const { LambdaClient, UpdateFunctionCodeCommand } = require("@aws-sdk/client-lambda");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+
 const getDirectories = () => {
   const lambdasPath = `${process.cwd()}/functions`;
 
@@ -13,40 +17,40 @@ const getDirectories = () => {
     .map(folderName => `${process.cwd()}/functions/${folderName}`);
 }
 
-const uploadToS3 = async ({ filePath, bucketName, keyName, s3 } = {}) => {
+const uploadToS3 = async ({ s3Client, filePath, bucketName, keyName } = {}) => {
   try {
-    const fileData = fs.createReadStream(filePath);
-
-    const params = {
+    const commandParams = {
       Bucket: bucketName,
       Key: keyName,
-      Body: fileData,
+      Body: fs.createReadStream(filePath),
       ContentType: 'application/zip'
     };
 
-    return await s3.putObject(params).promise();
+    const command = new PutObjectCommand(commandParams);
+    return await s3Client.send(command);
   } catch(err) {
     console.error("Failed to upload lambda zip zrchive:", err);
     throw err;
   }
 }
 
-const updateLambdaFunctionCode = async ({ lambda, bucket, key, lambdaName }) => {
+const updateLambdaFunctionCode = async ({ lambdaClient, bucket, key, lambdaName }) => {
   try {
-    const params = {
+    const commandParams = { // UpdateFunctionCodeRequest
       FunctionName: lambdaName, // the Lambda function whose resource policy you are updating
-      S3Bucket: bucket, 
+      S3Bucket: bucket,
       S3Key: key  //replace with your .zip file in S3
     };
-    
-    await lambda.updateFunctionCode(params).promise();
+
+    const command = new UpdateFunctionCodeCommand(commandParams);
+    await lambdaClient.send(command);
 
     console.log(`${lambdaName} code update!`);
 
     return true;
   } catch(e) {
     // TODO add debug mode so this warning would be visible
-    // console.warn(`Lambda ${lambdaName} is not found`, e);
+    console.warn(`Lambda ${lambdaName} is not found`, e);
 
     return true;
   }
@@ -116,8 +120,8 @@ module.exports = ({
       lambdasDirPathes.map(folderPath => archiveFolder(folderPath, `${folderPath}/__bundle__.cligenerated.zip`))
     );
 
-    const s3 = new AWS.S3();
-    const lambda = new AWS.Lambda({ region: 'us-east-1' });
+    const lambdaClient = new LambdaClient({ region: 'us-east-1' });
+    const s3Client = new S3Client({ region: 'us-east-1' });
 
     // upload lambdas zips to S3 bucket
     await Promise.all([
@@ -127,12 +131,14 @@ module.exports = ({
 
         return uploadToS3({ 
           filePath, 
-          s3,
+          s3Client,
           bucketName: infrastructure.globalResources.s3.bucketId,
           keyName: `${env}/${feature}/${name}.zip`, 
         });
       })
     ]);
+
+    console.log('start updating lambdas')
 
     // Update lambdas code for newly uploaded zip archives
     await Promise.all([
@@ -141,7 +147,7 @@ module.exports = ({
         const name = pathFolders[pathFolders.length - 2];
 
         return updateLambdaFunctionCode({ 
-          lambda,
+          lambdaClient,
           lambdaName: `${env}-${feature}-${config.subdomain}-${name}`,
           bucket: infrastructure.globalResources.s3.bucketId, 
           key: `${env}/${feature}/${name}.zip`, 
@@ -151,5 +157,7 @@ module.exports = ({
       // remove all zip files
       ...archives.map(filePath => fsPromises.unlink(filePath))
     ]);
+
+    console.log('end updating lambdas')
   } 
 });

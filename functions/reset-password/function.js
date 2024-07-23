@@ -1,14 +1,24 @@
-// Load the AWS SDK
-const AWS = require('aws-sdk');
-const { v4: uuidv4 } = require('uuid');
-const ses = new AWS.SES();
+const { SESClient, GetTemplateCommand, SendEmailCommand } = require("@aws-sdk/client-ses");
+const sesClient = new SESClient({ region: 'us-east-1' });
 
-// Create the DynamoDB service object
-const ddb = new AWS.DynamoDB.DocumentClient({apiVersion: '2012-08-10'});
+const { DynamoDBClient, TransactWriteItemsCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
+const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
+
+const { v4: uuidv4 } = require('uuid');
+const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 
 const infrastructure = require('infrastructure.cligenerated.json');
 const { env } = require('env.cligenerated.json');
 const services = require('services.cligenerated.json');
+
+const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
+  statusCode,
+  ...(body && { body: JSON.stringify(body) }),
+  headers: {
+    "Content-Type": "application/json",
+    ...headers
+  }
+});
 
 const validateEmail = (email) => {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -21,15 +31,15 @@ const createUserResetTokenInDatabase = async (email) => {
     email // include email so it would be easier retrieve user data
   })).toString('base64');
 
-  const transactParams = {
+  const transactWriteItemsParams = {
     TransactItems: [
       {
         ConditionCheck: {
           TableName: infrastructure.featureResources.dynamodb.tableName,
-          Key: { 
+          Key: marshall({ 
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#EMAIL#${email}#`,
-          },
+          }),
           ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk)',
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD'
         },
@@ -37,7 +47,7 @@ const createUserResetTokenInDatabase = async (email) => {
       {
         Put: {
             TableName: infrastructure.featureResources.dynamodb.tableName,
-            Item: { 
+            Item: marshall({ 
               'pk': `USER#EMAIL#${email}#`,
               'sk': `USER#RESET_PASSWORD_TOKEN#${email}#`,
               'createdAt': Date.now(),
@@ -45,15 +55,17 @@ const createUserResetTokenInDatabase = async (email) => {
               token,
 
               ttl: Math.floor((Date.now() + 86400000) / 1000) // 1 day
-            },
+            }),
             ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
         }
       }
     ]
   };
 
+  const transactWriteItemsCommand = new TransactWriteItemsCommand(transactWriteItemsParams);
+
   try {
-    await ddb.transactWrite(transactParams).promise();
+    await dynamoDbClient.send(transactWriteItemsCommand);
 
     return { 
       isSuccess: true,
@@ -85,18 +97,21 @@ const getUserDataByResetToken = async (resetToken) => {
 
     if(!email) return null;
 
-    const params = {
+    const getItemCommandParams = {
       TableName: infrastructure.featureResources.dynamodb.tableName,
-      Key: {
+      Key: marshall({
         'pk': `USER#EMAIL#${email}#`,
         'sk': `USER#EMAIL#${email}#`
-      }
+      })
     };
 
-    const data = await ddb.get(params).promise();
+    const getItemCommand = new GetItemCommand(getItemCommandParams);
+    const data = await dynamoDbClient.send(getItemCommand);
+
+    const normalizedUser = unmarshall(data?.Item ?? {});
 
     return { 
-      userId: data?.Item?.userId ?? null,
+      userId: normalizedUser?.userId ?? null,
       email
     };
   } catch(e) {
@@ -106,17 +121,18 @@ const getUserDataByResetToken = async (resetToken) => {
 
 const checkIfResetTokenExist = async(email, resetToken) => {
   try {
-    const params = {
+    const getItemCommandParams = {
       TableName: infrastructure.featureResources.dynamodb.tableName,
-      Key: {
+      Key: marshall({
         'pk': `USER#EMAIL#${email}#`,
         'sk': `USER#RESET_PASSWORD_TOKEN#${email}#`
-      }
+      })
     };
 
-    const data = await ddb.get(params).promise();
+    const getItemCommand = new GetItemCommand(getItemCommandParams);
+    const data = await dynamoDbClient.send(getItemCommand);
 
-    const { token = null, ttl = null } = data?.Item ?? {};
+    const { token = null, ttl = null } = unmarshall(data?.Item ?? {});
 
     // if item ttl is already expired
     if(ttl <= Math.floor((Date.now()) / 1000)) {
@@ -152,22 +168,22 @@ const resetUserPassword = async (resetToken, password) => {
     }
   }
 
-  const transactParams = {
+  const transactWriteItemsParams = {
     TransactItems: [
       {
         Update: {
           TableName: infrastructure.featureResources.dynamodb.tableName,
-          Key: { 
+          Key: marshall({ 
             'pk': `USER#ID#${userId}#`,
             'sk': `USER#ID#${userId}#`,
-          },
+          }),
           UpdateExpression: "SET #password = :password",
           ExpressionAttributeNames: {
             "#password": "password"
           },
-          ExpressionAttributeValues: {
+          ExpressionAttributeValues: marshall({
             ":password": password
-          },
+          }),
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
           ConditionExpression: 'attribute_exists(pk) AND attribute_exists(sk)',
         }
@@ -175,18 +191,20 @@ const resetUserPassword = async (resetToken, password) => {
       {
         Delete: {
           TableName: infrastructure.featureResources.dynamodb.tableName,
-          Key: { 
+          Key: marshall({ 
             'pk': `USER#EMAIL#${email}#`,
             'sk': `USER#RESET_PASSWORD_TOKEN#${email}#`,
-          },
+          }),
           ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
         }
       }
     ]
   };
 
+  const transactWriteItemsCommand = new TransactWriteItemsCommand(transactWriteItemsParams);
+
   try {
-    await ddb.transactWrite(transactParams).promise();
+    await dynamoDbClient.send(transactWriteItemsCommand);
 
     return { isSuccess: true };
   } catch(e) {
@@ -207,9 +225,10 @@ const resetUserPassword = async (resetToken, password) => {
 };
 
 const getEmailTemplateByName = async (templateName) => {
+  const command = new GetTemplateCommand({ TemplateName: templateName });
+
   try {
-    const data = await ses.getTemplate({ TemplateName: templateName }).promise();
-    const { TextPart, HtmlPart, SubjectPart } = data.Template;
+    const { Template: { TextPart, HtmlPart, SubjectPart } } = await sesClient.send(command);;
 
     return { text: TextPart, html: HtmlPart, subject: SubjectPart };
   } catch (err) {
@@ -226,7 +245,7 @@ const sendResetPasswordEmail = async (to, { text, html, subject }, resetToken) =
     .replaceAll('[[username]]', to)
     .replaceAll('[[resetPasswordLink]]', `https://${services['auth']}/reset-password?resetPasswordToken=${resetToken}`)
 
-  const params = {
+  const sendEmailCommandParams = {
     Destination: { ToAddresses: [to] },
 
     Source: "iMokhonko Ukraine <no-reply@imokhonko.com>",
@@ -251,17 +270,10 @@ const sendResetPasswordEmail = async (to, { text, html, subject }, resetToken) =
     },
   };
 
-  await ses.sendEmail(params).promise();
+  const sendEmailCommand = new SendEmailCommand(sendEmailCommandParams);
+  return await sesClient.send(sendEmailCommand);
 };
 
-const createResponse = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
-  statusCode,
-  ...(body && { body: JSON.stringify(body) }),
-  headers: {
-    "Content-Type": "application/json",
-    ...headers
-  }
-});
 
 exports.handler = async (event) => {
   const { action } = event?.queryStringParameters ?? {};

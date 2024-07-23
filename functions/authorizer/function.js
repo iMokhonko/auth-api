@@ -1,7 +1,4 @@
-const AWS = require('aws-sdk');
-
-// secrets manager
-const secretsManagerClient = new AWS.SecretsManager();
+const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
 
 const jwt = require('jsonwebtoken');
 
@@ -28,12 +25,13 @@ let cachedJwtSecret = null;
 const getJwtSecret = async () => {
   if(cachedJwtSecret) return cachedJwtSecret;
 
+  const secretsManagerClient = new SecretsManagerClient({ region: 'us-east-1' });
+  const command = new GetSecretValueCommand({
+    SecretId: infrastructure.globalResources.secretsManager.secretId
+  });
+
   try {
-    const secretData = await secretsManagerClient.getSecretValue({ 
-      SecretId: infrastructure.globalResources.secretsManager.secretId
-    }).promise();
-    
-    const secret =  secretData?.SecretString ?? Buffer.from(secretData.SecretBinary, 'base64').toString('ascii');
+    const { SecretString: secret } = await secretsManagerClient.send(command);
 
     cachedJwtSecret = secret;
 
