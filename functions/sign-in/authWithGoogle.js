@@ -1,6 +1,7 @@
 const axios = require('axios');
 const querystring = require('querystring');
 const getUserIdByLogin = require('./helpers/getUserIdByLogin');
+const getUserById = require('./helpers/getUserById');
 const generateLoginReponse = require('./helpers/generateLoginResponse');
 
 const services = require('services.cligenerated.json');
@@ -32,10 +33,13 @@ module.exports = async (event) => {
       const { email } = profile;
 
       const userId = await getUserIdByLogin(email, { loginType: 'email' });
+      const user = await getUserById(userId);
 
       const authStatus = userId ? 'fully_signed_in' : 'provider_signed_in';
 
-      const loginResponse = userId ? await generateLoginReponse(userId) : {};
+      const loginResponse = userId 
+        ? await generateLoginReponse(userId, user.subscriptionPlan) 
+        : {};
 
       return {
         statusCode: 200,

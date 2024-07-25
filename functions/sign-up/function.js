@@ -19,7 +19,7 @@ const parseTransactionCanceledException = (str) => {
   return arrayStr.split(', ').map(x => x === 'None' ? null : x);
 }
 
-const addUserToDB = async ({ username, password, email, firstName, lastName, isEmailVerified = false }) => {
+const addUserToDB = async ({ username, password, email, firstName, lastName, isEmailVerified = false, subscriptionPlan = 'basic' }) => {
   const userId = uuidv4();
 
   const transactWriteItemsParams = {
@@ -30,13 +30,14 @@ const addUserToDB = async ({ username, password, email, firstName, lastName, isE
             Item: marshall({ 
               'pk': `USER#ID#${userId}#`,
               'sk': `USER#ID#${userId}#`,
-              'createdAt': Date.now(),
 
+              userId,
               username,
               email,
               password: await encryptPassword(password),
               firstName,
               lastName,
+              subscriptionPlan,
               createdAt: Date.now(),
             }),
             ReturnValuesOnConditionCheckFailure: 'ALL_OLD',
@@ -263,7 +264,8 @@ exports.handler = async ({ body = {} } = {}) => {
       isEmailVerified,
       password,
       firstName: normalizedFirstName,
-      lastName: normalizedLastName
+      lastName: normalizedLastName,
+      subscriptionPlan: 'basic'
     });
 
     if(isSuccess) {

@@ -12,7 +12,7 @@ module.exports = async (refreshToken) => {
   const jwtSecret = await getJwtSecret();
 
   const { 
-    isValid = false, 
+    isValid = false,
     decoded = null 
   } = verifyJwtToken(refreshToken, jwtSecret);
 
@@ -21,6 +21,6 @@ module.exports = async (refreshToken) => {
 
   return createResponse(
     200, 
-    await generateLoginReponse(decoded.userId)
+    await generateLoginReponse(decoded.userId, decoded.subscriptionPlan)
   );
 };

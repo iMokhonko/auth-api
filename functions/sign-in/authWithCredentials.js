@@ -30,6 +30,6 @@ module.exports = async (login = null, password = null) => {
 
   return createResponse(
     200, 
-    await generateLoginReponse(userId)
+    await generateLoginReponse(userId, user.subscriptionPlan)
   );
 };

@@ -20,3 +20,15 @@ output "secretsManager" {
     secretArn  = aws_secretsmanager_secret.jwt_secret.arn
   }
 }
+
+output "vpc" {
+  value = {
+    id = aws_vpc.auth_api_backend_vpc.id
+
+    publicSubnetA = aws_subnet.auth_api_public_subnet_a.id,
+    publicSubnetB = aws_subnet.auth_api_public_subnet_b.id
+
+    privateSubnetA = aws_subnet.auth_api_private_subnet_a.id
+    privateSubnetB = aws_subnet.auth_api_private_subnet_b.id
+  }
+}
