@@ -2,8 +2,6 @@
 node_modules
 /dist
 *.cligenerated.*
-*.zip
-
 
 # local env files
 .env.local
