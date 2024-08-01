@@ -1,7 +1,7 @@
 const infrastructure = require('./infrastructure.cligenerated.json');
 
 const { DynamoDBClient, GetItemCommand } = require('@aws-sdk/client-dynamodb');
-const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
+const dynamoDbClient = new DynamoDBClient({ region: 'eu-central-1' });
 
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
 

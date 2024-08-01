@@ -1,5 +1,5 @@
 locals {
-  handle_user_sign_up_lambda_name = "${var.env}-${var.feature}-${var.config.subdomain}-handle-user-sign-up"
+  handle_user_sign_up_lambda_name = "${var.env}-${var.feature}-auth-api-handle-user-sign-up"
 }
 
 # Create iam role

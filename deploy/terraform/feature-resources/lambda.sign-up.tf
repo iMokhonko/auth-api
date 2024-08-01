@@ -1,5 +1,5 @@
 locals {
-  sign_up_lambda_name = "${var.env}-${var.feature}-${var.config.subdomain}-sign-up"
+  sign_up_lambda_name = "${var.env}-${var.feature}-auth-api-sign-up"
 }
 
 # Create iam role
@@ -71,7 +71,7 @@ data "aws_iam_policy_document" "sign_up_lambda_policy" {
 }
 
 resource "aws_iam_policy" "sign_up_policy" {
-  name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-sign-up"
+  name        = "${var.env}-${var.feature}-auth-api-lambda-sign-up"
   description = "Allow /sign-up to add logs to cloudwatch and access DynamoDB table"
   policy      = data.aws_iam_policy_document.sign_up_lambda_policy.json
 

@@ -1,5 +1,5 @@
 const { SESClient, GetTemplateCommand, SendEmailCommand } = require("@aws-sdk/client-ses");
-const sesClient = new SESClient({ region: 'us-east-1' });
+const sesClient = new SESClient({ region: 'eu-central-1' });
 
 const services = require('./services.cligenerated.json');
 const { env } = require('env.cligenerated.json');

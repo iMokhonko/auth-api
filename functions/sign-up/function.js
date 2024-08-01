@@ -1,5 +1,5 @@
 const { DynamoDBClient, TransactWriteItemsCommand } = require('@aws-sdk/client-dynamodb');
-const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
+const dynamoDbClient = new DynamoDBClient({ region: 'eu-central-1' });
 
 const { v4: uuidv4 } = require('uuid');
 const axios = require('axios');

@@ -1,5 +1,5 @@
 // const { KMSClient, DecryptCommand } = require("@aws-sdk/client-kms");
-// const kmsClient = new KMSClient({ region: 'us-east-1' });
+// const kmsClient = new KMSClient({ region: 'eu-central-1' });
 
 module.exports =  async (password) => {
   return password;

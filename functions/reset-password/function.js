@@ -1,8 +1,8 @@
 const { SESClient, GetTemplateCommand, SendEmailCommand } = require("@aws-sdk/client-ses");
-const sesClient = new SESClient({ region: 'us-east-1' });
+const sesClient = new SESClient({ region: 'eu-central-1' });
 
 const { DynamoDBClient, TransactWriteItemsCommand, GetItemCommand } = require('@aws-sdk/client-dynamodb');
-const dynamoDbClient = new DynamoDBClient({ region: 'us-east-1' });
+const dynamoDbClient = new DynamoDBClient({ region: 'eu-central-1' });
 
 const { v4: uuidv4 } = require('uuid');
 const { marshall, unmarshall } = require("@aws-sdk/util-dynamodb");
@@ -239,11 +239,11 @@ const getEmailTemplateByName = async (templateName) => {
 const sendResetPasswordEmail = async (to, { text, html, subject }, resetToken) => {
   const formattedHtml = html
     .replaceAll('[[username]]', to)
-    .replaceAll('[[resetPasswordLink]]', `https://${services['auth']}/reset-password?resetPasswordToken=${resetToken}`);
+    .replaceAll('[[resetPasswordLink]]', `https://${services['auth']}?resetPasswordToken=${resetToken}`);
 
   const formattedText = text
     .replaceAll('[[username]]', to)
-    .replaceAll('[[resetPasswordLink]]', `https://${services['auth']}/reset-password?resetPasswordToken=${resetToken}`)
+    .replaceAll('[[resetPasswordLink]]', `https://${services['auth']}?resetPasswordToken=${resetToken}`)
 
   const sendEmailCommandParams = {
     Destination: { ToAddresses: [to] },

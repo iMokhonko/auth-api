@@ -1,5 +1,5 @@
 locals {
-  verify_user_lambda_name = "${var.env}-${var.feature}-${var.config.subdomain}-verify-user"
+  verify_user_lambda_name = "${var.env}-${var.feature}-auth-api-verify-user"
 }
 
 # Create iam role
@@ -82,7 +82,7 @@ data "aws_iam_policy_document" "verify_user_lambda_policy" {
 }
 
 resource "aws_iam_policy" "verify_policy" {
-  name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-verify-user"
+  name        = "${var.env}-${var.feature}-auth-api-lambda-verify-user"
   description = "Allow /verify lambda to add logs to cloudwatch and read/update items in dynamo db table"
   policy      = data.aws_iam_policy_document.verify_user_lambda_policy.json
 

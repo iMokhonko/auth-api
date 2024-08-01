@@ -1,5 +1,5 @@
 locals {
-  reset_password_lambda_name = "${var.env}-${var.feature}-${var.config.subdomain}-reset-password"
+  reset_password_lambda_name = "${var.env}-${var.feature}-auth-api-reset-password"
 }
 
 # Create iam role
@@ -88,7 +88,7 @@ data "aws_iam_policy_document" "reset_password_lambda_policy" {
 }
 
 resource "aws_iam_policy" "reset_password_policy" {
-  name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-reset-password"
+  name        = "${var.env}-${var.feature}-auth-api-lambda-reset-password"
   description = "Allow /reset-password to add logs to cloudwatch and access DynamoDB table"
   policy      = data.aws_iam_policy_document.reset_password_lambda_policy.json
 

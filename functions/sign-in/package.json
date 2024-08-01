@@ -12,7 +12,6 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.427.0",
     "@aws-sdk/client-kms": "^3.427.0",
-    "@aws-sdk/client-secrets-manager": "^3.616.0",
     "@aws-sdk/util-dynamodb": "^3.616.0",
     "axios": "^1.6.7",
     "jsonwebtoken": "^9.0.2",

@@ -1,5 +1,5 @@
 locals {
-  authorizer_lambda_name = "${var.env}-${var.feature}-${var.config.subdomain}-authorizer"
+  authorizer_lambda_name = "${var.env}-${var.feature}-auth-api-authorizer"
 }
 
 # Create iam role
@@ -58,8 +58,14 @@ resource "aws_lambda_function" "authorizer_lambda" {
   role = aws_iam_role.authorizer_lambda_exec.arn
 
   vpc_config {
-    subnet_ids         = [var.global_resources.vpc.publicSubnetA, var.global_resources.vpc.publicSubnetB]
+    subnet_ids         = [var.global_resources.vpc.privateSubnetA, var.global_resources.vpc.privateSubnetB]
     security_group_ids = [aws_security_group.auth_api_authorizer_lambda_sg.id]
+  }
+
+  environment {
+    variables = {
+      JWT_SECRET = data.aws_ssm_parameter.jwt_secret.value
+    }
   }
 
   tags = var.tags
@@ -88,6 +94,14 @@ data "aws_iam_policy_document" "authorizer_lambda_policy" {
     resources = ["arn:aws:logs:*:*:*"]
   }
 
+  # statement {
+  #   effect = "Allow"
+
+  #   actions = ["ssm:GetParameter"]
+
+  #   resources = [var.global_resources.parameterStore.secretArn]
+  # }
+
   statement {
     effect = "Allow"
 
@@ -105,7 +119,7 @@ data "aws_iam_policy_document" "authorizer_lambda_policy" {
 }
 
 resource "aws_iam_policy" "authorizer_policy" {
-  name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-authorizer"
+  name        = "${var.env}-${var.feature}-auth-api-lambda-authorizer"
   description = "Authorizer for API endpoints"
   policy      = data.aws_iam_policy_document.authorizer_lambda_policy.json
 

@@ -1,6 +1,6 @@
 # Create s3 bucket for lambda function zip archives
 resource "aws_s3_bucket" "lambdas_bucket" {
-  bucket_prefix = "${var.env}-${var.config.subdomain}-lambdas-"
+  bucket_prefix = "${var.env}-auth-api-lambdas-"
   force_destroy = true
 
   tags = var.tags

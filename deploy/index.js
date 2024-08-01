@@ -61,18 +61,18 @@ module.exports = ({
 
   terraformBackendConfiguration: {
     serviceName: 'auth-api',
-    bucket: 'tf-state-backend-imokhonko',
-    region: 'us-east-1'
+    bucket: 'tfstate-floor13',
+    region: 'eu-central-1'
   },
 
   awsConfiguration: {
-    region: 'us-east-1',
+    region: 'eu-central-1',
     profile: 'default',
   },
   
   config: {
     hostedZone: 'imokhonko.com',
-    subdomain: 'auth-api',
+    subdomain: 'api.auth',
   },
 
   // TODO change it so any sensitive values are not stored in plain text in code
@@ -120,8 +120,8 @@ module.exports = ({
       lambdasDirPathes.map(folderPath => archiveFolder(folderPath, `${folderPath}/__bundle__.cligenerated.zip`))
     );
 
-    const lambdaClient = new LambdaClient({ region: 'us-east-1' });
-    const s3Client = new S3Client({ region: 'us-east-1' });
+    const lambdaClient = new LambdaClient({ region: 'eu-central-1' });
+    const s3Client = new S3Client({ region: 'eu-central-1' });
 
     // upload lambdas zips to S3 bucket
     await Promise.all([
@@ -148,7 +148,7 @@ module.exports = ({
 
         return updateLambdaFunctionCode({ 
           lambdaClient,
-          lambdaName: `${env}-${feature}-${config.subdomain}-${name}`,
+          lambdaName: `${env}-${feature}-auth-api-${name}`,
           bucket: infrastructure.globalResources.s3.bucketId, 
           key: `${env}/${feature}/${name}.zip`, 
         });

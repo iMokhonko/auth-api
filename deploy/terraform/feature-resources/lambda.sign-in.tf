@@ -1,5 +1,5 @@
 locals {
-  sign_in_lambda_name = "${var.env}-${var.feature}-${var.config.subdomain}-sign-in"
+  sign_in_lambda_name = "${var.env}-${var.feature}-auth-api-sign-in"
 }
 
 # Create iam role
@@ -35,6 +35,12 @@ resource "aws_lambda_function" "sign_in_lambda" {
 
   role = aws_iam_role.sign_in_lambda_exec.arn
 
+  environment {
+    variables = {
+      JWT_SECRET = data.aws_ssm_parameter.jwt_secret.value
+    }
+  }
+
   tags = var.tags
 }
 
@@ -57,6 +63,14 @@ data "aws_iam_policy_document" "sign_in_lambda_policy" {
     resources = [module.dynamodb_table.dynamodb_table_arn]
   }
 
+  # statement {
+  #   effect = "Allow"
+
+  #   actions = ["ssm:GetParameter"]
+
+  #   resources = [var.global_resources.parameterStore.secretArn]
+  # }
+
   statement {
     effect = "Allow"
 
@@ -71,7 +85,7 @@ data "aws_iam_policy_document" "sign_in_lambda_policy" {
 }
 
 resource "aws_iam_policy" "sign_in_policy" {
-  name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-sign-in"
+  name        = "${var.env}-${var.feature}-auth-api-lambda-sign-in"
   description = "Allow /sign-in to add logs to cloudwatch and access DynamoDB table"
   policy      = data.aws_iam_policy_document.sign_in_lambda_policy.json
 

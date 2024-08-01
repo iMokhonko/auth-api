@@ -1,5 +1,5 @@
 locals {
-  profile_lambda_name = "${var.env}-${var.feature}-${var.config.subdomain}-profile"
+  profile_lambda_name = "${var.env}-${var.feature}-auth-api-profile"
 }
 
 # Create iam role
@@ -71,7 +71,7 @@ data "aws_iam_policy_document" "profile_lambda_policy" {
 }
 
 resource "aws_iam_policy" "profile_policy" {
-  name        = "${var.env}-${var.feature}-${var.config.subdomain}-lambda-profile"
+  name        = "${var.env}-${var.feature}-auth-api-lambda-profile"
   description = "Allow /profile to add logs to cloudwatch and access DynamoDB table"
   policy      = data.aws_iam_policy_document.profile_lambda_policy.json
 

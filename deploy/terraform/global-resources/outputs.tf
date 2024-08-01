@@ -13,20 +13,16 @@ output "dns" {
   }
 }
 
-output "secretsManager" {
+output "parameterStore" {
   value = {
-    secretName = "${var.env}/${var.config.subdomain}/auth-api-jwt-secret"
-    secretId   = aws_secretsmanager_secret.jwt_secret.id
-    secretArn  = aws_secretsmanager_secret.jwt_secret.arn
+    secretName = aws_ssm_parameter.jwt_secret.name
+    secretArn  = aws_ssm_parameter.jwt_secret.arn
   }
 }
 
 output "vpc" {
   value = {
     id = aws_vpc.auth_api_backend_vpc.id
-
-    publicSubnetA = aws_subnet.auth_api_public_subnet_a.id,
-    publicSubnetB = aws_subnet.auth_api_public_subnet_b.id
 
     privateSubnetA = aws_subnet.auth_api_private_subnet_a.id
     privateSubnetB = aws_subnet.auth_api_private_subnet_b.id
