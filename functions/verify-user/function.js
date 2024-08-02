@@ -96,7 +96,8 @@ const verifyUserEmail = async (email) => {
 exports.handler = async (event) => {
   try {
     const { 
-      token: base64Token = null
+      token: base64Token = null,
+      redirectUrl = null
     } = event.queryStringParameters;
   
     if(!base64Token) {
