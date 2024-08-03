@@ -131,3 +131,9 @@ resource "aws_iam_role_policy_attachment" "authorizer_lambda_policy" {
   role       = aws_iam_role.authorizer_lambda_exec.name
   policy_arn = aws_iam_policy.authorizer_policy.arn
 }
+
+# Attach policy elasticache polic
+resource "aws_iam_role_policy_attachment" "authorizer_lambda_elasticache_policy" {
+  role       = aws_iam_role.authorizer_lambda_exec.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonElastiCacheFullAccess"
+}
