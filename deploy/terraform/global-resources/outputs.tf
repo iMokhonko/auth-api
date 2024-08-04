@@ -13,13 +13,6 @@ output "dns" {
   }
 }
 
-output "parameterStore" {
-  value = {
-    secretName = aws_ssm_parameter.jwt_secret.name
-    secretArn  = aws_ssm_parameter.jwt_secret.arn
-  }
-}
-
 output "vpc" {
   value = {
     id = aws_vpc.auth_api_backend_vpc.id
@@ -29,10 +22,10 @@ output "vpc" {
   }
 }
 
-output "elasticache" {
-  value = {
-    arn      = aws_elasticache_serverless_cache.redis_adapter.arn,
-    name     = aws_elasticache_serverless_cache.redis_adapter.name,
-    endpoint = aws_elasticache_serverless_cache.redis_adapter.endpoint
-  }
-}
+# output "elasticache" {
+#   value = {
+#     arn      = aws_elasticache_serverless_cache.redis_adapter.arn,
+#     name     = aws_elasticache_serverless_cache.redis_adapter.name,
+#     endpoint = aws_elasticache_serverless_cache.redis_adapter.endpoint
+#   }
+# }

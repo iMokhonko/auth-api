@@ -37,7 +37,9 @@ resource "aws_lambda_function" "sign_in_lambda" {
 
   environment {
     variables = {
-      JWT_SECRET = data.aws_ssm_parameter.jwt_secret.value
+      JWT_SECRET                = data.aws_ssm_parameter.jwt_secret.value,
+      GOOGLE_AUTH_CLIENT_ID     = data.aws_ssm_parameter.google_auth_client_id.value
+      GOOGLE_AUTH_CLIENT_SECRET = data.aws_ssm_parameter.google_auth_client_secret.value
     }
   }
 
@@ -62,14 +64,6 @@ data "aws_iam_policy_document" "sign_in_lambda_policy" {
 
     resources = [module.dynamodb_table.dynamodb_table_arn]
   }
-
-  # statement {
-  #   effect = "Allow"
-
-  #   actions = ["ssm:GetParameter"]
-
-  #   resources = [var.global_resources.parameterStore.secretArn]
-  # }
 
   statement {
     effect = "Allow"

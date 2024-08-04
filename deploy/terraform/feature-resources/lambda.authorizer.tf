@@ -94,14 +94,6 @@ data "aws_iam_policy_document" "authorizer_lambda_policy" {
     resources = ["arn:aws:logs:*:*:*"]
   }
 
-  # statement {
-  #   effect = "Allow"
-
-  #   actions = ["ssm:GetParameter"]
-
-  #   resources = [var.global_resources.parameterStore.secretArn]
-  # }
-
   statement {
     effect = "Allow"
 

@@ -5,7 +5,6 @@ const getUserById = require('./helpers/getUserById');
 const generateLoginReponse = require('./helpers/generateLoginResponse');
 
 const services = require('services.cligenerated.json');
-const config = require('config.cligenerated.json');
 
 module.exports = async (event) => {
   const { code } = event?.queryStringParameters ?? {};
@@ -16,8 +15,8 @@ module.exports = async (event) => {
     try {
       const { data: tokens } = await axios.post('https://oauth2.googleapis.com/token', querystring.stringify({
         code,
-        client_id: config.google.oauth.clientId,
-        client_secret: config.google.oauth.clientSecret,
+        client_id: process.env.GOOGLE_AUTH_CLIENT_ID,
+        client_secret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
         redirect_uri: redirectUrl,
         grant_type: 'authorization_code',
       }), {
@@ -76,7 +75,7 @@ module.exports = async (event) => {
     return {
       statusCode: 302,
       headers: {
-        Location: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.google.oauth.clientId}&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=openid%20email%20profile&response_type=code`,
+        Location: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_AUTH_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=openid%20email%20profile&response_type=code`,
       }
     };
   }
