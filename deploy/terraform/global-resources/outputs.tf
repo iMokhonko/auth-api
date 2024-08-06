@@ -22,10 +22,10 @@ output "vpc" {
   }
 }
 
-# output "elasticache" {
-#   value = {
-#     arn      = aws_elasticache_serverless_cache.redis_adapter.arn,
-#     name     = aws_elasticache_serverless_cache.redis_adapter.name,
-#     endpoint = aws_elasticache_serverless_cache.redis_adapter.endpoint
-#   }
-# }
+output "elasticache" {
+  value = {
+    arn      = aws_elasticache_serverless_cache.redis_adapter.arn,
+    name     = aws_elasticache_serverless_cache.redis_adapter.name,
+    endpoint = aws_elasticache_serverless_cache.redis_adapter.endpoint
+  }
+}

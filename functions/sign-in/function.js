@@ -4,6 +4,8 @@ const authWithGoogle = require('./authWithGoogle');
 const authWithRefreshToken = require('./authWithRefreshToken.js');
 
 exports.handler = async (event = {}) => {
+  console.log('event', event);
+  
   try {    
     const { type } = event?.queryStringParameters ?? {};
 

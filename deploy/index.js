@@ -65,10 +65,20 @@ module.exports = ({
     region: 'eu-central-1'
   },
 
-  awsConfiguration: {
-    region: 'eu-central-1',
-    profile: 'default',
-  },
+  awsConfiguration: [
+    {
+      region: 'eu-central-1',
+      profile: 'default',
+    },
+    {
+      // for terraform `route_53_subdomain` module we need 
+      // to create TLS certificate in us-east-1 region
+      // so cloudfront can use this certificate
+      region: 'us-east-1',
+      profile: 'default',
+      alias: 'us_east_1'
+    }
+  ],
   
   config: {
     hostedZone: 'imokhonko.com',

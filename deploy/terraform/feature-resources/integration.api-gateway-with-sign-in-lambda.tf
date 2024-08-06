@@ -2,8 +2,8 @@
 resource "aws_apigatewayv2_integration" "sign_in_lambda" {
   api_id = aws_apigatewayv2_api.api_gateway.id
 
-  integration_uri = aws_lambda_function.sign_in_lambda.invoke_arn
-  integration_type = "AWS_PROXY"
+  integration_uri    = aws_lambda_function.sign_in_lambda.invoke_arn
+  integration_type   = "AWS_PROXY"
   integration_method = "POST"
 }
 
@@ -20,12 +20,15 @@ resource "aws_apigatewayv2_route" "post_sign_in" {
 
   route_key = "POST /sign-in"
   target    = "integrations/${aws_apigatewayv2_integration.sign_in_lambda.id}"
+
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.ip_rate_limiter_authorizer.id
 }
 
 resource "aws_lambda_permission" "sign_in_invoke_permissions" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name =  aws_lambda_function.sign_in_lambda.function_name
+  function_name = aws_lambda_function.sign_in_lambda.function_name
   principal     = "apigateway.amazonaws.com"
 
   source_arn = "${aws_apigatewayv2_api.api_gateway.execution_arn}/*/*"

@@ -28,6 +28,8 @@ const generatePolicy = (effect = 'Deny', context = {}) => {
 };
 
 exports.handler = async (event) => {
+    console.log('event', JSON.stringify(event));
+
   if (!redisClient.isReady) {
     await redisClient.connect();
   }
