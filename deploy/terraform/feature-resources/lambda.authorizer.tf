@@ -24,27 +24,6 @@ POLICY
   tags = var.tags
 }
 
-# # Create security group
-resource "aws_security_group" "auth_api_authorizer_lambda_sg" {
-  name        = "auth-api-authorizer-lambda-sg"
-  description = "Allow all traffic"
-  vpc_id      = var.global_resources.vpc.id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 
 # Create lambda function
 resource "aws_lambda_function" "authorizer_lambda" {
@@ -56,11 +35,6 @@ resource "aws_lambda_function" "authorizer_lambda" {
   filename = "dummy.zip"
 
   role = aws_iam_role.authorizer_lambda_exec.arn
-
-  vpc_config {
-    subnet_ids         = [var.global_resources.vpc.privateSubnetA, var.global_resources.vpc.privateSubnetB]
-    security_group_ids = [aws_security_group.auth_api_authorizer_lambda_sg.id]
-  }
 
   environment {
     variables = {
@@ -93,21 +67,6 @@ data "aws_iam_policy_document" "authorizer_lambda_policy" {
 
     resources = ["arn:aws:logs:*:*:*"]
   }
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "elasticache:*",
-      "ec2:DescribeNetworkInterfaces",
-      "ec2:CreateNetworkInterface",
-      "ec2:DeleteNetworkInterface",
-      "ec2:DescribeNetworkInterface",
-      "ec2:ModifyNetworkInterfaceAttribute"
-    ]
-
-    resources = ["*"]
-  }
 }
 
 resource "aws_iam_policy" "authorizer_policy" {
@@ -122,10 +81,4 @@ resource "aws_iam_policy" "authorizer_policy" {
 resource "aws_iam_role_policy_attachment" "authorizer_lambda_policy" {
   role       = aws_iam_role.authorizer_lambda_exec.name
   policy_arn = aws_iam_policy.authorizer_policy.arn
-}
-
-# Attach policy elasticache polic
-resource "aws_iam_role_policy_attachment" "authorizer_lambda_elasticache_policy" {
-  role       = aws_iam_role.authorizer_lambda_exec.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonElastiCacheFullAccess"
 }

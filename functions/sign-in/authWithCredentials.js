@@ -6,7 +6,7 @@ const generateLoginReponse = require('./helpers/generateLoginResponse');
 
 module.exports = async (login = null, password = null) => {
   const normalizedLogin = login?.trim?.();
-  
+
   if(!normalizedLogin) 
     return createResponse(400, { errorMessage: `Login required` });
 

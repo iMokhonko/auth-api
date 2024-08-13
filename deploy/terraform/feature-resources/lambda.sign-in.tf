@@ -24,6 +24,27 @@ POLICY
   tags = var.tags
 }
 
+# # Create security group
+resource "aws_security_group" "auth_api_sign_in_lambda_sg" {
+  name        = "auth-api-authorizer-lambda-sg"
+  description = "Allow all traffic"
+  vpc_id      = data.aws_vpc.vpc.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 # Create lambda function
 resource "aws_lambda_function" "sign_in_lambda" {
   function_name = local.sign_in_lambda_name
@@ -40,8 +61,18 @@ resource "aws_lambda_function" "sign_in_lambda" {
       JWT_SECRET                = data.aws_ssm_parameter.jwt_secret.value,
       GOOGLE_AUTH_CLIENT_ID     = data.aws_ssm_parameter.google_auth_client_id.value
       GOOGLE_AUTH_CLIENT_SECRET = data.aws_ssm_parameter.google_auth_client_secret.value
+
+      REDIS_ENDPOINT = "dev-redis-cache-rwzd07.serverless.euc1.cache.amazonaws.com"
+      REDIS_PORT     = "6379"
     }
   }
+
+  vpc_config {
+    subnet_ids         = [data.aws_subnet.private_subnet_a.id, data.aws_subnet.private_subnet_b.id]
+    security_group_ids = [aws_security_group.auth_api_sign_in_lambda_sg.id]
+  }
+
+  layers = [aws_lambda_layer_version.ip_rate_limiter_layer.arn]
 
   tags = var.tags
 }
@@ -76,6 +107,20 @@ data "aws_iam_policy_document" "sign_in_lambda_policy" {
 
     resources = ["arn:aws:logs:*:*:*"]
   }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:CreateNetworkInterface",
+      "ec2:DeleteNetworkInterface",
+      "ec2:DescribeNetworkInterface",
+      "ec2:ModifyNetworkInterfaceAttribute"
+    ]
+
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "sign_in_policy" {
@@ -90,5 +135,11 @@ resource "aws_iam_policy" "sign_in_policy" {
 resource "aws_iam_role_policy_attachment" "sign_in_lambda_policy" {
   role       = aws_iam_role.sign_in_lambda_exec.name
   policy_arn = aws_iam_policy.sign_in_policy.arn
+}
+
+# Attach elasticache full access policy
+resource "aws_iam_role_policy_attachment" "sign_in_lambda_elasticache_policy" {
+  role       = aws_iam_role.sign_in_lambda_exec.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonElastiCacheFullAccess"
 }
 

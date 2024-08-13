@@ -12,20 +12,3 @@ output "dns" {
     dnsAddress                = module.route_53_subdomain.dns_address
   }
 }
-
-output "vpc" {
-  value = {
-    id = aws_vpc.auth_api_backend_vpc.id
-
-    privateSubnetA = aws_subnet.auth_api_private_subnet_a.id
-    privateSubnetB = aws_subnet.auth_api_private_subnet_b.id
-  }
-}
-
-output "elasticache" {
-  value = {
-    arn      = aws_elasticache_serverless_cache.redis_adapter.arn,
-    name     = aws_elasticache_serverless_cache.redis_adapter.name,
-    endpoint = aws_elasticache_serverless_cache.redis_adapter.endpoint
-  }
-}

@@ -3,42 +3,47 @@ const authWithCredentials = require('./authWithCredentials');
 const authWithGoogle = require('./authWithGoogle');
 const authWithRefreshToken = require('./authWithRefreshToken.js');
 
-exports.handler = async (event = {}) => {
-  console.log('event', event);
-  
-  try {    
-    const { type } = event?.queryStringParameters ?? {};
+const { ipRateLimiter } = require('ip-rate-limiter');
 
-    const { body } = event;
-    const parsedBody = JSON.parse(body) ?? {};
+exports.handler = async (event, context) => await ipRateLimiter(
+  event, 
+  context, 
+  { rateLimit: 5, rateLimitUnit: 'minute' }, 
+  async (event = {}) => {    
+    try {    
+      const { type } = event?.queryStringParameters ?? {};
 
-    switch(type) {
-      case 'google': {        
-        return await authWithGoogle(event);
+      const { body } = event;
+      const parsedBody = JSON.parse(body) ?? {};
+
+      switch(type) {
+        case 'google': {        
+          return await authWithGoogle(event);
+        }
+
+        case 'credentials': {
+          const { 
+            login = null, 
+            password = null 
+          } = parsedBody;
+
+          return await authWithCredentials(login, password);
+        }
+
+        case 'refresh_token': {
+          const { refreshToken = null } = parsedBody;
+
+          return await authWithRefreshToken(refreshToken);
+        }
+
+        default: {
+          return createResponse(400, { errorMessage: `Unsupported auth type` });
+        }
       }
+    } catch(e) {
+      console.error(e);
 
-      case 'credentials': {
-        const { 
-          login = null, 
-          password = null 
-        } = parsedBody;
-
-        return await authWithCredentials(login, password);
-      }
-
-      case 'refresh_token': {
-        const { refreshToken = null } = parsedBody;
-
-        return await authWithRefreshToken(refreshToken);
-      }
-
-      default: {
-        return createResponse(400, { errorMessage: `Unsupported auth type` });
-      }
+      return createResponse(500);
     }
-  } catch(e) {
-    console.error(e);
-
-    return createResponse(500);
   }
-}
+)

@@ -20,9 +20,6 @@ resource "aws_apigatewayv2_route" "post_sign_in" {
 
   route_key = "POST /sign-in"
   target    = "integrations/${aws_apigatewayv2_integration.sign_in_lambda.id}"
-
-  authorization_type = "CUSTOM"
-  authorizer_id      = aws_apigatewayv2_authorizer.ip_rate_limiter_authorizer.id
 }
 
 resource "aws_lambda_permission" "sign_in_invoke_permissions" {

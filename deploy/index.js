@@ -9,12 +9,12 @@ const copyFileToFilder = require('./copyFileToFolder');
 const { LambdaClient, UpdateFunctionCodeCommand } = require("@aws-sdk/client-lambda");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
-const getDirectories = () => {
-  const lambdasPath = `${process.cwd()}/functions`;
+const getDirectories = (folderPath) => {
+  const lambdasPath = `${process.cwd()}${folderPath}`;
 
   return fs.readdirSync(lambdasPath)
     .filter(file => fs.statSync(path.join(lambdasPath, file)).isDirectory())
-    .map(folderName => `${process.cwd()}/functions/${folderName}`);
+    .map(folderName => `${process.cwd()}${folderPath}/${folderName}`);
 }
 
 const uploadToS3 = async ({ s3Client, filePath, bucketName, keyName } = {}) => {
@@ -83,6 +83,23 @@ module.exports = ({
   config: {
     hostedZone: 'imokhonko.com',
     subdomain: 'api.auth',
+  },
+
+  preDeploy: async () => {
+    const layersDirPathes = getDirectories('/layers');
+
+    // archive lambda layers folders
+    await Promise.all(
+      layersDirPathes.map(folderPath => {
+        const pathFolders = folderPath.split('/');
+        const name = pathFolders[pathFolders.length - 1];
+
+        return archiveFolder(
+          folderPath, 
+          `${process.cwd()}/deploy/terraform/feature-resources/${name}-layer.cligenerated.zip`
+        )
+      })
+    );
   },
 
   deploy: async ({ env, feature, infrastructure }) => {
