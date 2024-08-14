@@ -4,11 +4,9 @@ output "s3" {
   }
 }
 
-output "dns" {
+
+output "tls_certificate" {
   value = {
-    route53ZoneId             = module.route_53_subdomain.route53_zone_id
-    acmMasterCertificateArn   = module.route_53_subdomain.acm_master_certificate_arn
-    acmFeaturesCertificateArn = module.route_53_subdomain.acm_features_certificate_arn
-    dnsAddress                = module.route_53_subdomain.dns_address
+    arn = aws_acm_certificate.tls_certificate.arn
   }
 }

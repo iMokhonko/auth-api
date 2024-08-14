@@ -62,8 +62,8 @@ resource "aws_lambda_function" "sign_in_lambda" {
       GOOGLE_AUTH_CLIENT_ID     = data.aws_ssm_parameter.google_auth_client_id.value
       GOOGLE_AUTH_CLIENT_SECRET = data.aws_ssm_parameter.google_auth_client_secret.value
 
-      REDIS_ENDPOINT = "dev-redis-cache-rwzd07.serverless.euc1.cache.amazonaws.com"
-      REDIS_PORT     = "6379"
+      REDIS_ENDPOINT = data.aws_ssm_parameter.redis_cache_endpoint_url.value
+      REDIS_PORT     = data.aws_ssm_parameter.redis_cache_endpoint_port.value
     }
   }
 

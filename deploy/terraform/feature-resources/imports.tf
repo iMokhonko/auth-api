@@ -1,4 +1,8 @@
-# THIS DATA SHOULD BE CREATED MANUALLY FOR EACH ENV
+data "aws_route53_zone" "primary" {
+  name         = "${var.config.hostedZone}."
+  private_zone = false
+}
+
 
 data "aws_ssm_parameter" "jwt_secret" {
   name = "/secret/auth-api/${var.env}/jwt-secret"
@@ -31,3 +35,11 @@ data "aws_subnet" "private_subnet_b" {
   }
 }
 
+data "aws_ssm_parameter" "redis_cache_endpoint_url" {
+  name = "/configuration/global/${var.env}/redis-endpoint-url"
+}
+
+
+data "aws_ssm_parameter" "redis_cache_endpoint_port" {
+  name = "/configuration/global/${var.env}/redis-endpoint-port"
+}

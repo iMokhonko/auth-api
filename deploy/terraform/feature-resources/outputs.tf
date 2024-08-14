@@ -59,8 +59,8 @@ output "apiGateway" {
   }
 }
 
-output "cloudfront" {
-  value = {
-    distributionId = aws_cloudfront_distribution.distribution.id
-  }
-}
+# output "cloudfront" {
+#   value = {
+#     distributionId = aws_cloudfront_distribution.distribution.id
+#   }
+# }
