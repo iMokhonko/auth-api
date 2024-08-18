@@ -35,6 +35,8 @@ resource "aws_lambda_function" "profile_lambda" {
 
   role = aws_iam_role.profile_lambda_exec.arn
 
+  layers = [aws_lambda_layer_version.rate_limiters_layer.arn]
+
   tags = var.tags
 }
 
@@ -78,9 +80,15 @@ resource "aws_iam_policy" "profile_policy" {
   tags = var.tags
 }
 
-# Attach policy
-resource "aws_iam_role_policy_attachment" "profile_lambda_policy" {
+# Attach default lambda policy
+resource "aws_iam_role_policy_attachment" "profile_lambda_policy_attachment" {
   role       = aws_iam_role.profile_lambda_exec.name
   policy_arn = aws_iam_policy.profile_policy.arn
+}
+
+# Attach Token Rate Limit policy
+resource "aws_iam_role_policy_attachment" "profile_lambda_token_rate_limit_policy_attachment" {
+  role       = aws_iam_role.profile_lambda_exec.name
+  policy_arn = aws_iam_policy.token_rate_limiter_policy.arn
 }
 

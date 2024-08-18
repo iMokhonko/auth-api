@@ -13,6 +13,7 @@ module.exports = async (event) => {
 
   if (code) {
     try {
+      console.log('get tokens')
       const { data: tokens } = await axios.post('https://oauth2.googleapis.com/token', querystring.stringify({
         code,
         client_id: process.env.GOOGLE_AUTH_CLIENT_ID,
@@ -24,6 +25,8 @@ module.exports = async (event) => {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
+
+      console.log('tokens', tokens);
       
       // Fetch the user's profile with the access token
       const { data: profile } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', 
@@ -66,6 +69,7 @@ module.exports = async (event) => {
         </html>`,
       };       
     } catch (error) {
+      console.error('error', error);
       return {
         statusCode: 500,
         body: JSON.stringify(error.message)
