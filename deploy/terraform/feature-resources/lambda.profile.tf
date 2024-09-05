@@ -35,7 +35,7 @@ resource "aws_lambda_function" "profile_lambda" {
 
   role = aws_iam_role.profile_lambda_exec.arn
 
-  # layers = [aws_lambda_layer_version.rate_limiters_layer.arn]
+  layers = [aws_lambda_layer_version.rate_limiters_layer.arn]
 
   tags = var.tags
 }

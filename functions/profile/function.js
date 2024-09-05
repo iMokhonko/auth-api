@@ -1,14 +1,16 @@
+const infrastructure = require('./infrastructure.cligenerated.json');
+const { env, hostedZone } = require('./env.cligenerated.json');
+
+// middlewares
 const { compose } = require('@lambda-middleware/compose');
 const { cors } = require('@lambda-middleware/cors');
+const { tokenRateLimiter } = require('@fl13/token-rate-limiter');
 
+// helpers
 const { createJsonResponse } = require('lambda-nodejs-response-helper');
 
-// const { tokenRateLimiter } = require('token-rate-limiter');
-// const infrastructure = require('./infrastructure.cligenerated.json')
-
+// actions
 const getUserById = require('./getUserById');
-
-const { env, hostedZone } = require('./env.cligenerated.json');
 
 const CORS_OPTIONS = {
   allowedMethods: ['GET'],
@@ -54,7 +56,11 @@ exports.handler = async (event, context) => {
 
     case 'GET': {
       return await compose(
-        cors(CORS_OPTIONS)
+        cors(CORS_OPTIONS),
+        tokenRateLimiter({ 
+          rateLimitDynamoDBTableName: infrastructure.featureResources.dynamodb.tableName,
+          userId: event?.requestContext?.authorizer?.userId
+        })
       )(getMethodHandler)(event, context);
     }
 
