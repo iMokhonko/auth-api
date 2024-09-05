@@ -21,25 +21,3 @@ data "aws_vpc" "vpc" {
     Name = "${var.env}-vpc"
   }
 }
-
-# data "aws_subnet" "private_subnet_a" {
-#   tags = {
-#     Name = "${var.env}-private-subnet-a"
-#   }
-# }
-
-
-# data "aws_subnet" "private_subnet_b" {
-#   tags = {
-#     Name = "${var.env}-private-subnet-b"
-#   }
-# }
-
-# data "aws_ssm_parameter" "redis_cache_endpoint_url" {
-#   name = "/configuration/global/${var.env}/redis-endpoint-url"
-# }
-
-
-# data "aws_ssm_parameter" "redis_cache_endpoint_port" {
-#   name = "/configuration/global/${var.env}/redis-endpoint-port"
-# }

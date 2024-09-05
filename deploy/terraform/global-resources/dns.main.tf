@@ -3,6 +3,8 @@ resource "aws_acm_certificate" "tls_certificate" {
   domain_name       = "${var.config.subdomain}.${var.env}.${var.config.hostedZone}"
   validation_method = "DNS"
   tags              = var.tags
+
+  provider = aws.us_east_1
 }
 
 # Add validation records for TLS certificate in default region
@@ -24,6 +26,8 @@ resource "aws_route53_record" "tls_certificate_validation_record" {
   zone_id         = data.aws_route53_zone.primary.id
 
   depends_on = [aws_acm_certificate.tls_certificate]
+
+  provider = aws.us_east_1
 }
 
 # wait for certificate validation
@@ -32,4 +36,6 @@ resource "aws_acm_certificate_validation" "tls_validation" {
   validation_record_fqdns = [for record in aws_route53_record.tls_certificate_validation_record : record.fqdn]
 
   depends_on = [aws_route53_record.tls_certificate_validation_record]
+
+  provider = aws.us_east_1
 }

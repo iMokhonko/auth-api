@@ -1,10 +1,19 @@
+const { compose } = require('@lambda-middleware/compose');
+const { cors } = require('@lambda-middleware/cors');
+
 const createResponse = require('./helpers/createResponse');
 const authWithCredentials = require('./authWithCredentials');
 const authWithGoogle = require('./authWithGoogle');
 const authWithRefreshToken = require('./authWithRefreshToken.js');
 
+const { env, hostedZone } = require('./env.cligenerated.json');
 
-exports.handler = async (event = {}) => {    
+exports.handler = compose(
+  cors({ 
+    allowedMethods: ['GET', 'POST'], 
+    allowedOrigins: ['http://localhost:5173', `https://auth.${env}.${hostedZone}`]
+  })
+)(async (event = {}) => {    
   try {    
     const { type } = event?.queryStringParameters ?? {};
 
@@ -40,4 +49,4 @@ exports.handler = async (event = {}) => {
 
     return createResponse(500);
   }
-}
+});

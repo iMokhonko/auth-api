@@ -4,7 +4,7 @@ module.exports = (statusCode = 200, body = {}, { headers = {} } = {}) => ({
   ...(body && { body: JSON.stringify(body) }),
 
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": 'application/json',
     ...headers
   }
 });

@@ -101,3 +101,13 @@ resource "aws_iam_role_policy_attachment" "reset_password_lambda_policy" {
   policy_arn = aws_iam_policy.reset_password_policy.arn
 }
 
+resource "aws_lambda_permission" "rest_api_reset_password_invoke_permissions" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.reset_password_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.rest_api.execution_arn}/*/*"
+}
+
+

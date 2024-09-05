@@ -35,7 +35,7 @@ resource "aws_lambda_function" "profile_lambda" {
 
   role = aws_iam_role.profile_lambda_exec.arn
 
-  layers = [aws_lambda_layer_version.rate_limiters_layer.arn]
+  # layers = [aws_lambda_layer_version.rate_limiters_layer.arn]
 
   tags = var.tags
 }
@@ -90,5 +90,14 @@ resource "aws_iam_role_policy_attachment" "profile_lambda_policy_attachment" {
 resource "aws_iam_role_policy_attachment" "profile_lambda_token_rate_limit_policy_attachment" {
   role       = aws_iam_role.profile_lambda_exec.name
   policy_arn = aws_iam_policy.token_rate_limiter_policy.arn
+}
+
+resource "aws_lambda_permission" "rest_api_profile_invoke_permissions" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.profile_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.rest_api.execution_arn}/*/*"
 }
 

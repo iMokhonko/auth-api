@@ -13,7 +13,7 @@ module.exports = async (userId, subscriptionPlan) => {
     return {
       accessToken: {
         value: jwt.sign({ userId, subscriptionPlan, type: 'access_token' }, process.env.JWT_SECRET, { expiresIn: '5m' }),
-        maxAge: 60 * 5,
+        maxAge: 60 * 60,
         sameSite: 'lax',
         secure: true,
         domain

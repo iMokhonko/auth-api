@@ -82,3 +82,14 @@ resource "aws_iam_role_policy_attachment" "authorizer_lambda_policy" {
   role       = aws_iam_role.authorizer_lambda_exec.name
   policy_arn = aws_iam_policy.authorizer_policy.arn
 }
+
+
+# allow Api Gateway to call this authorizer lambda 
+resource "aws_lambda_permission" "authorizer_invoke_permissions" {
+  statement_id_prefix = "AllowAuthorizerExecution"
+  action              = "lambda:InvokeFunction"
+  function_name       = aws_lambda_function.authorizer_lambda.function_name
+  principal           = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.rest_api.execution_arn}/authorizers/*"
+}

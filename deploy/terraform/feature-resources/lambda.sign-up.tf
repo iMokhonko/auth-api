@@ -24,27 +24,6 @@ POLICY
   tags = var.tags
 }
 
-# Create security group
-resource "aws_security_group" "auth_api_sign_up_lambda_sg" {
-  name        = "auth-api-sign-up-lambda-sg"
-  description = "Allow all traffic"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 # Create lambda function
 resource "aws_lambda_function" "sign_up_lambda" {
   function_name = local.sign_up_lambda_name
@@ -55,20 +34,6 @@ resource "aws_lambda_function" "sign_up_lambda" {
   filename = "dummy.zip"
 
   role = aws_iam_role.sign_up_lambda_exec.arn
-
-  # environment {
-  #   variables = {
-  #     REDIS_ENDPOINT = data.aws_ssm_parameter.redis_cache_endpoint_url.value
-  #     REDIS_PORT     = data.aws_ssm_parameter.redis_cache_endpoint_port.value
-  #   }
-  # }
-
-  # vpc_config {
-  #   subnet_ids         = [data.aws_subnet.private_subnet_a.id, data.aws_subnet.private_subnet_b.id]
-  #   security_group_ids = [aws_security_group.auth_api_sign_up_lambda_sg.id]
-  # }
-
-  # layers = [aws_lambda_layer_version.ip_rate_limiter_layer.arn]
 
   tags = var.tags
 }
@@ -103,20 +68,6 @@ data "aws_iam_policy_document" "sign_up_lambda_policy" {
 
     resources = ["arn:aws:logs:*:*:*"]
   }
-
-  # statement {
-  #   effect = "Allow"
-
-  #   actions = [
-  #     "ec2:DescribeNetworkInterfaces",
-  #     "ec2:CreateNetworkInterface",
-  #     "ec2:DeleteNetworkInterface",
-  #     "ec2:DescribeNetworkInterface",
-  #     "ec2:ModifyNetworkInterfaceAttribute"
-  #   ]
-
-  #   resources = ["*"]
-  # }
 }
 
 resource "aws_iam_policy" "sign_up_policy" {
@@ -134,9 +85,11 @@ resource "aws_iam_role_policy_attachment" "sign_up_lambda_policy" {
 }
 
 
-# Attach elasticache full access policy
-# resource "aws_iam_role_policy_attachment" "sign_up_lambda_elasticache_policy" {
-#   role       = aws_iam_role.sign_up_lambda_exec.name
-#   policy_arn = "arn:aws:iam::aws:policy/AmazonElastiCacheFullAccess"
-# }
+resource "aws_lambda_permission" "rest_api_sign_up_invoke_permissions" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.sign_up_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
 
+  source_arn = "${aws_api_gateway_rest_api.rest_api.execution_arn}/*/*"
+}

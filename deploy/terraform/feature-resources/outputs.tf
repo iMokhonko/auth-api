@@ -49,18 +49,3 @@ output "lambdas" {
     }
   }
 }
-
-output "apiGateway" {
-  value = {
-    id           = aws_apigatewayv2_api.api_gateway.id
-    executionArn = aws_apigatewayv2_api.api_gateway.execution_arn
-    endpointUrl  = aws_apigatewayv2_api.api_gateway.api_endpoint
-    authorizerId = aws_apigatewayv2_authorizer.authorizer.id
-  }
-}
-
-# output "cloudfront" {
-#   value = {
-#     distributionId = aws_cloudfront_distribution.distribution.id
-#   }
-# }

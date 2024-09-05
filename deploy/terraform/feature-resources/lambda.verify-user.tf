@@ -94,3 +94,12 @@ resource "aws_iam_role_policy_attachment" "verify_user_lambda_policy" {
   role       = aws_iam_role.verify_user_lambda_exec.name
   policy_arn = aws_iam_policy.verify_policy.arn
 }
+
+resource "aws_lambda_permission" "rest_api_verify_invoke_permissions" {
+  statement_id  = "AllowExecutionFromAPIGateway"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.verify_user_lambda.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_api_gateway_rest_api.rest_api.execution_arn}/*/*"
+}

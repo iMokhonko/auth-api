@@ -11,6 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.616.0",
-    "@aws-sdk/util-dynamodb": "^3.616.0"
+    "@aws-sdk/util-dynamodb": "^3.616.0",
+    "@lambda-middleware/compose": "^1.2.0",
+    "@lambda-middleware/cors": "^2.0.0",
+    "lambda-nodejs-response-helper": "^1.0.0"
   }
 }

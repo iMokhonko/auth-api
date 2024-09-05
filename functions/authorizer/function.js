@@ -1,15 +1,15 @@
 const jwt = require('jsonwebtoken');
 
-const generatePolicy = (effect = 'Deny', context = {}) => {
+const generatePolicy = (effect = 'Deny', resource, context = {}) => {
   return {
-    principalId: 'user',
+    principalId: context?.userId ?? 'user',
     policyDocument: {
       Version: '2012-10-17',
       Statement: [
         {
           Action: 'execute-api:Invoke',
           Effect: effect,
-          Resource: "*",
+          Resource: resource,
         },
       ],
     },
@@ -18,21 +18,24 @@ const generatePolicy = (effect = 'Deny', context = {}) => {
 };
 
 exports.handler = async (event) => {
-  const [tokenType, token] = `${event.identitySource[0]}`.split(' ');
+  console.log('event', JSON.stringify(event));
+
+  const [tokenType, token] = `${event.authorizationToken}`.split(' ');
 
   if(!tokenType || !token || tokenType !== 'Bearer') {
-    return generatePolicy('Deny');
+    return generatePolicy('Deny', event.methodArn);
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if(!decoded.type || decoded.type !== 'access_token') {
-      return generatePolicy('Deny');
+      return generatePolicy('Deny', event.methodArn);
     }
 
-    return generatePolicy('Allow', decoded);
+    console.log('ALLOW', decoded)
+    return generatePolicy('Allow', event.methodArn, decoded);
   } catch (err) {
-    return generatePolicy('Deny');
+    return generatePolicy('Deny', event.methodArn);
   }
 }
