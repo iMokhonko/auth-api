@@ -4,7 +4,7 @@ const { env, hostedZone } = require('./env.cligenerated.json');
 // middlewares
 const { compose } = require('@lambda-middleware/compose');
 const { cors } = require('@lambda-middleware/cors');
-const { tokenRateLimiter } = require('@fl13/token-rate-limiter');
+const { tokenRateLimiter } = require('@fl13/token-rate-limiter'); // from lambda layer
 
 // helpers
 const { createJsonResponse } = require('lambda-nodejs-response-helper');
