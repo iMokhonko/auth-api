@@ -2,9 +2,9 @@ const infrastructure = require('./infrastructure.cligenerated.json');
 const { env, hostedZone } = require('./env.cligenerated.json');
 
 // middlewares
-const { compose } = require('@lambda-middleware/compose');
-const { cors } = require('@lambda-middleware/cors');
-const { tokenRateLimiter } = require('@fl13/token-rate-limiter'); // from lambda layer
+const { compose: composeMiddlewares } = require('@lambda-middleware/compose');
+const { cors: corsMiddleware } = require('@lambda-middleware/cors');
+const { tokenRateLimiter: tokenRateLimiterMiddleware } = require('@fl13/token-rate-limiter'); // from lambda layer
 
 // helpers
 const { createJsonResponse } = require('lambda-nodejs-response-helper');
@@ -49,15 +49,15 @@ const getMethodHandler = async (event) => {
 exports.handler = async (event, context) => {
   switch (event.httpMethod) {
     case 'OPTIONS': {
-      return await compose(
-        cors(CORS_OPTIONS)
+      return await composeMiddlewares(
+        corsMiddleware(CORS_OPTIONS)
       )(() => {})(event, context) // cors middleware will not execute this logic
     }
 
     case 'GET': {
-      return await compose(
-        cors(CORS_OPTIONS),
-        tokenRateLimiter({ 
+      return await composeMiddlewares(
+        corsMiddleware(CORS_OPTIONS),
+        tokenRateLimiterMiddleware({ 
           rateLimitDynamoDBTableName: infrastructure.featureResources.dynamodb.tableName,
           userId: event?.requestContext?.authorizer?.userId
         })
