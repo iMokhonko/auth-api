@@ -42,7 +42,7 @@ resource "aws_api_gateway_rest_api" "rest_api" {
       "/sign-in" = {
         get = {
           x-amazon-apigateway-integration = {
-            httpMethod           = "GET"
+            httpMethod           = "POST"
             payloadFormatVersion = "1.0"
             type                 = "AWS_PROXY"
             uri                  = aws_lambda_function.sign_in_lambda.invoke_arn
@@ -73,7 +73,7 @@ resource "aws_api_gateway_rest_api" "rest_api" {
       "/verify" = {
         get = {
           x-amazon-apigateway-integration = {
-            httpMethod           = "GET"
+            httpMethod           = "POST"
             payloadFormatVersion = "1.0"
             type                 = "AWS_PROXY"
             uri                  = aws_lambda_function.verify_user_lambda.invoke_arn
